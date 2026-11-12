@@ -1,3 +1,4 @@
+import 'package:sistema_ocs/core/theme/app_theme.dart';
 import 'dart:convert';
 import 'dart:math';
 import 'dart:ui' as ui;
@@ -68,21 +69,54 @@ class _PrestamoDetalleScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Debe firmar antes de confirmar"),
+          backgroundColor: Colors.orange,
         ),
       );
       return;
     }
 
     final data = widget.data;
-    final items = data['items'] as List;
+    final dni = (data['dni'] ?? '').toString().trim();
+    final nombres = (data['nombres_completos'] ?? '').toString().trim();
+    final items = (data['items'] as List?) ?? [];
+
+    if (!RegExp(r'^\d{8}$').hasMatch(dni)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("El DNI del trabajador debe contener exactamente 8 dígitos numéricos"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (nombres.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Debe especificar los nombres del trabajador"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Debe seleccionar al menos un artículo para el préstamo"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     final jsonPrestamo = {
       'trabajador_id': data['trabajador_id'],
       'codigo_unico':
           'PRE-${DateTime.now().toIso8601String().substring(0, 10).replaceAll('-', '')}-${Random().nextInt(999).toString().padLeft(3, '0')}',
-      'dni': data['dni'] ?? '',
-      'nombres_completos': data['nombres_completos'],
-      'cargo': data['cargo'] ?? '',
+      'dni': dni,
+      'nombres_completos': nombres,
+      'cargo': data['cargo'] ?? 'Operario',
       'fecha_prestamo': DateTime.now().toIso8601String(),
       'fecha_devolucion_prevista':
           DateTime.now().add(const Duration(days: 30)).toIso8601String(),
@@ -107,7 +141,7 @@ class _PrestamoDetalleScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("✅ Préstamo registrado correctamente"),
-            backgroundColor: Colors.green,
+            backgroundColor: AppTheme.secondaryDark,
           ),
         );
 
@@ -116,10 +150,22 @@ class _PrestamoDetalleScreenState
     } on DioException catch (e) {
       print("❌ Error backend: ${e.response?.data}");
 
+      String errorMsg = "Error al registrar préstamo";
+      final responseData = e.response?.data;
+      if (responseData is Map && responseData['detail'] != null) {
+        final detail = responseData['detail'];
+        if (detail is String) {
+          errorMsg = detail;
+        } else if (detail is List && detail.isNotEmpty) {
+          errorMsg = detail[0]['msg']?.toString() ?? detail.toString();
+        }
+      } else if (responseData is String && responseData.isNotEmpty) {
+        errorMsg = responseData;
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-              "Error: ${e.response?.statusCode ?? 'Sin conexión'}"),
+          content: Text(errorMsg),
           backgroundColor: Colors.red,
         ),
       );
@@ -143,9 +189,9 @@ class _PrestamoDetalleScreenState
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.white,
-        foregroundColor: Colors.blueGrey[800],
+        foregroundColor: AppTheme.primaryDark,
         shape: const Border(
-          bottom: BorderSide(color: Colors.blueGrey, width: 2),
+          bottom: BorderSide(color: AppTheme.textSecondary, width: 2),
         ),
       ),
       body: SingleChildScrollView(
@@ -201,7 +247,7 @@ class _PrestamoDetalleScreenState
             Container(
               height: 160,
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.blueGrey.shade300, width: 1.5),
+                border: Border.all(color: AppTheme.border, width: 1.5),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
@@ -228,8 +274,8 @@ class _PrestamoDetalleScreenState
                   icon: const Icon(LucideIcons.eraser, size: 18),
                   label: const Text('Limpiar'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.blueGrey[700],
-                    side: BorderSide(color: Colors.blueGrey.shade300),
+                    foregroundColor: AppTheme.primaryDark,
+                    side: BorderSide(color: AppTheme.border),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -241,7 +287,7 @@ class _PrestamoDetalleScreenState
                   icon: const Icon(LucideIcons.save, size: 18),
                   label: const Text('Guardar firma'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueGrey[700],
+                    backgroundColor: AppTheme.primaryDark,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -277,7 +323,7 @@ class _PrestamoDetalleScreenState
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green[700],
+                  backgroundColor: AppTheme.secondaryDark,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
@@ -323,7 +369,7 @@ class _PrestamoDetalleScreenState
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.blueGrey[800],
+                  color: AppTheme.primaryDark,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, color: Colors.white, size: 20),
@@ -334,7 +380,7 @@ class _PrestamoDetalleScreenState
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: Colors.blueGrey[800],
+                  color: AppTheme.primaryDark,
                 ),
               ),
             ],
@@ -352,7 +398,7 @@ class _PrestamoDetalleScreenState
   }) {
     return Row(
       children: [
-        Icon(icon, color: Colors.blueGrey[800], size: 24),
+        Icon(icon, color: AppTheme.primaryDark, size: 24),
         const SizedBox(width: 10),
         Text(
           title,
@@ -371,7 +417,7 @@ class _PrestamoDetalleScreenState
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: Colors.blueGrey[600]),
+          Icon(icon, size: 18, color: AppTheme.textSecondary),
           const SizedBox(width: 12),
           Expanded(
             flex: 3,
@@ -379,7 +425,7 @@ class _PrestamoDetalleScreenState
               '$label:',
               style: const TextStyle(
                 fontWeight: FontWeight.w600,
-                color: Colors.blueGrey,
+                color: AppTheme.textSecondary,
               ),
             ),
           ),
@@ -398,7 +444,7 @@ class _PrestamoDetalleScreenState
   Widget _buildItemsTable(List items) {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.blueGrey.shade200),
+        border: Border.all(color: AppTheme.border),
         borderRadius: BorderRadius.circular(12),
         color: Colors.white,
       ),
@@ -407,7 +453,7 @@ class _PrestamoDetalleScreenState
         child: Table(
           border: TableBorder(
             horizontalInside: BorderSide(
-              color: Colors.blueGrey.shade200,
+              color: AppTheme.border,
               width: 1,
             ),
           ),
@@ -419,7 +465,7 @@ class _PrestamoDetalleScreenState
             // Cabecera
             TableRow(
               decoration: BoxDecoration(
-                color: Colors.blueGrey[700],
+                color: AppTheme.primaryDark,
               ),
               children: [
                 _buildTableCell('Artículo', isHeader: true),

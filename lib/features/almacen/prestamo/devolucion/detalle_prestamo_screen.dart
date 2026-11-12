@@ -125,12 +125,12 @@ class DetallePrestamoScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: prestamo['estado'] == 'abierto'
                       ? Colors.orange[50]
-                      : Colors.green[50],
+                      : AppTheme.secondaryLight,
                   borderRadius: BorderRadius.circular(30),
                   border: Border.all(
                     color: prestamo['estado'] == 'abierto'
                         ? Colors.orange.shade200
-                        : Colors.green.shade200,
+                        : AppTheme.secondary,
                   ),
                 ),
                 child: Row(
@@ -143,7 +143,7 @@ class DetallePrestamoScreen extends StatelessWidget {
                       size: 14,
                       color: prestamo['estado'] == 'abierto'
                           ? Colors.orange[800]
-                          : Colors.green[800],
+                          : AppTheme.secondaryDark,
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -153,7 +153,7 @@ class DetallePrestamoScreen extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                         color: prestamo['estado'] == 'abierto'
                             ? Colors.orange[800]
-                            : Colors.green[800],
+                            : AppTheme.secondaryDark,
                       ),
                     ),
                   ],
@@ -461,9 +461,9 @@ class DetallePrestamoScreen extends StatelessWidget {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    _buildQuantityChip('Prestado: $cantidadPrestada', Colors.blueGrey),
+                    _buildQuantityChip('Prestado: $cantidadPrestada', AppTheme.textSecondary),
                     const SizedBox(width: 8),
-                    _buildQuantityChip('Devuelto: $cantidadDevuelta', Colors.green),
+                    _buildQuantityChip('Devuelto: $cantidadDevuelta', AppTheme.secondaryDark),
                   ],
                 ),
                 if (pendiente > 0) ...[
@@ -488,7 +488,7 @@ class DetallePrestamoScreen extends StatelessWidget {
           ),
           Icon(
             estaDevuelto ? LucideIcons.checkCircle : LucideIcons.clock,
-            color: estaDevuelto ? Colors.green[700] : Colors.orange[700],
+            color: estaDevuelto ? AppTheme.secondaryDark : Colors.orange[700],
           ),
         ],
       ),

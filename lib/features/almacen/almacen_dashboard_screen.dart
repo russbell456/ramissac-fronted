@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:sistema_ocs/core/storage/session_storage.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import 'package:sistema_ocs/core/theme/app_theme.dart';
 import 'package:sistema_ocs/features/almacen/escanear_qr_screen.dart';
@@ -20,7 +20,7 @@ class AlmacenDashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return FutureBuilder<String?>(
-      future: const FlutterSecureStorage().read(key: 'user_role'),
+      future: const SessionStorage().read(key: 'user_role'),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
@@ -110,7 +110,7 @@ class AlmacenDashboardScreen extends ConsumerWidget {
                       icon: LucideIcons.qrCode,
                       title: 'Escanear QR',
                       subtitle: 'Confirma préstamos o devoluciones escaneando',
-                      color: Colors.deepPurple,
+                      color: AppTheme.primary,
                       onTap: () {
                         // Navigator.push(context, MaterialPageRoute(builder: (_) => const EscanearQrScreen()));
                        Navigator.push(context, MaterialPageRoute(builder: (_) => const ScanQRScreen()));

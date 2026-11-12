@@ -2,18 +2,15 @@
 
 import 'package:dio/dio.dart';
 import 'package:sistema_ocs/data/models/rq_model.dart'; // Crearemos este modelo
-import 'package:sistema_ocs/data/models/rq_item_model.dart'; // Y este
 
 class RqService {
   final Dio _dio;
-  final String _baseUrl = 'http://172.20.34.174:8000'; // ✅ USAR TU IP DE FASTAPI
 
-  RqService() : _dio = Dio(BaseOptions(baseUrl: 'http://172.20.34.174:8000')); 
+  RqService(this._dio);
 
-  // 💡 GET /rqs/
   Future<List<RQResponse>> listRqs() async {
     try {
-      final response = await _dio.get('/rqs/');
+      final response = await _dio.get('/rq-campo');
       
       if (response.statusCode == 200) {
         // Mapear la lista de JSONs a List<RQResponse>
@@ -24,16 +21,21 @@ class RqService {
       throw Exception('Fallo al cargar RQs: ${response.statusCode}');
     } on DioException catch (e) {
       // Manejo de errores de red o servidor
-      throw Exception('Error de conexión al listar RQs: ${e.message}');
+      final data = e.response?.data;
+      final detalle = data is Map<String, dynamic> ? data['detail'] : data;
+      throw Exception(detalle ?? 'Error de conexión al listar RQs: ${e.message}');
+    } on FormatException catch (e) {
+      throw Exception('El backend devolvió datos inválidos: ${e.message}');
+    } on TypeError catch (e) {
+      throw Exception('El formato de los RQs no es compatible: $e');
     }
   }
 
-  // 💡 DELETE /rqs/{rq_id}
   Future<void> deleteRq(int rqId) async {
     try {
-      final response = await _dio.delete('/rqs/$rqId');
+      final response = await _dio.delete('/rq-campo/$rqId');
       
-      if (response.statusCode != 200) {
+      if (response.statusCode != 204) {
         throw Exception('Fallo al eliminar el RQ: ${response.statusCode}');
       }
     } on DioException catch (e) {

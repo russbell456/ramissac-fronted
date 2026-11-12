@@ -3,9 +3,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sistema_ocs/data/models/rq_model.dart';
 import 'package:sistema_ocs/data/services/rq_service.dart';
+import 'package:sistema_ocs/data/network/dio_client.dart';
 
 // 1. Proveedor del Servicio
-final rqServiceProvider = Provider((ref) => RqService());
+final rqServiceProvider = Provider((ref) => RqService(ref.watch(dioProvider)));
 
 // 2. Notifier para gestionar la lista de RQs
 class RqListNotifier extends StateNotifier<AsyncValue<List<RQResponse>>> {

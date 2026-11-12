@@ -7,14 +7,15 @@ import 'package:sistema_ocs/data/models/rq_model.dart';
 import 'package:sistema_ocs/features/requerimientos/rq_providers.dart';
 import 'package:sistema_ocs/features/requerimientos/rq_detail_screen.dart';
 
-
 class RQsListScreen extends ConsumerWidget {
   const RQsListScreen({super.key});
 
-  void _handleDelete(BuildContext context, WidgetRef ref, int rqId, String nroRq) {
+  void _handleDelete(
+      BuildContext context, WidgetRef ref, int rqId, String nroRq) {
     showDialog(
       context: context,
-      builder: (ctx) => Dialog( // Cambiado a Dialog estándar para mejor control de tamaño
+      builder: (ctx) => Dialog(
+        // Cambiado a Dialog estándar para mejor control de tamaño
         backgroundColor: Colors.transparent,
         child: AppCard(
           backgroundColor: AppTheme.background,
@@ -30,7 +31,8 @@ class RQsListScreen extends ConsumerWidget {
                 const SizedBox(height: AppTheme.spacingL),
                 Text(
                   '¿Está seguro de eliminar el Requerimiento $nroRq? Esta acción es irreversible.',
-                  style: AppTheme.bodyMedium.copyWith(color: AppTheme.textSecondary),
+                  style: AppTheme.bodyMedium
+                      .copyWith(color: AppTheme.textSecondary),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppTheme.spacingXL),
@@ -40,7 +42,8 @@ class RQsListScreen extends ConsumerWidget {
                       child: OutlinedButton(
                         onPressed: () => Navigator.of(ctx).pop(),
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: AppTheme.spacingM),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: AppTheme.spacingM),
                           shape: RoundedRectangleBorder(
                             borderRadius: AppTheme.borderRadiusMedium,
                           ),
@@ -48,7 +51,8 @@ class RQsListScreen extends ConsumerWidget {
                         ),
                         child: Text(
                           'Cancelar',
-                          style: AppTheme.labelLarge.copyWith(color: AppTheme.textSecondary),
+                          style: AppTheme.labelLarge
+                              .copyWith(color: AppTheme.textSecondary),
                         ),
                       ),
                     ),
@@ -59,11 +63,14 @@ class RQsListScreen extends ConsumerWidget {
                         onPressed: () async {
                           Navigator.of(ctx).pop();
                           try {
-                            await ref.read(rqListNotifierProvider.notifier).deleteRq(rqId);
+                            await ref
+                                .read(rqListNotifierProvider.notifier)
+                                .deleteRq(rqId);
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('RQ $nroRq eliminado con éxito.'),
+                                  content:
+                                      Text('RQ $nroRq eliminado con éxito.'),
                                   backgroundColor: AppTheme.success,
                                   behavior: SnackBarBehavior.floating,
                                 ),
@@ -107,39 +114,64 @@ class RQsListScreen extends ConsumerWidget {
           // Header con búsqueda mejorado para evitar overflow
           AppCard(
             backgroundColor: AppTheme.background,
+            padding: EdgeInsets.zero,
             borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(20),
-              bottomRight: Radius.circular(20),
+              bottomLeft: Radius.circular(16),
+              bottomRight: Radius.circular(16),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(AppTheme.spacingM),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
               child: Row(
                 children: [
                   Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
-                      decoration: BoxDecoration(
-                        color: AppTheme.border.withOpacity(0.3),
-                        borderRadius: AppTheme.borderRadiusMedium,
-                      ),
+                    child: SizedBox(
+                      height: 44,
                       child: TextField(
                         style: AppTheme.bodyMedium,
                         decoration: InputDecoration(
                           hintText: 'Buscar RQ...',
-                          hintStyle: AppTheme.bodySmall.copyWith(color: AppTheme.textDisabled),
-                          border: InputBorder.none,
-                          icon: Icon(Icons.search, color: AppTheme.primary, size: 20),
+                          hintStyle: AppTheme.bodySmall
+                              .copyWith(color: AppTheme.textDisabled),
+                          filled: true,
+                          fillColor: AppTheme.surface,
+                          prefixIcon: const Icon(Icons.search,
+                              color: AppTheme.primary, size: 20),
+                          prefixIconConstraints:
+                              const BoxConstraints(minWidth: 42),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
+                          border: OutlineInputBorder(
+                            borderRadius: AppTheme.borderRadiusMedium,
+                            borderSide:
+                                BorderSide(color: AppTheme.border.lighten10),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: AppTheme.borderRadiusMedium,
+                            borderSide:
+                                BorderSide(color: AppTheme.border.lighten10),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: AppTheme.borderRadiusMedium,
+                            borderSide: const BorderSide(
+                                color: AppTheme.primary, width: 1.4),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: AppTheme.spacingM),
-                  Material(
-                    color: AppTheme.primary,
-                    borderRadius: AppTheme.borderRadiusMedium,
-                    child: IconButton(
-                      icon: Icon(Icons.refresh, color: AppTheme.background),
-                      onPressed: () => ref.invalidate(rqListNotifierProvider),
+                  const SizedBox(width: AppTheme.spacingS),
+                  SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: Material(
+                      color: AppTheme.primary,
+                      borderRadius: AppTheme.borderRadiusMedium,
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        icon: const Icon(Icons.refresh,
+                            color: AppTheme.background, size: 22),
+                        onPressed: () => ref.invalidate(rqListNotifierProvider),
+                      ),
                     ),
                   ),
                 ],
@@ -151,20 +183,49 @@ class RQsListScreen extends ConsumerWidget {
           Expanded(
             child: rqsAsyncValue.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, s) => Center(child: Text('Error al cargar datos')),
+              error: (e, s) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.info_outline,
+                          color: AppTheme.primary, size: 42),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'No se pudieron cargar los requerimientos.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: AppTheme.primary),
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: () => ref.invalidate(rqListNotifierProvider),
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Volver a intentar'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.secondary,
+                          side: const BorderSide(color: AppTheme.secondary),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               data: (rqs) {
                 if (rqs.isEmpty) {
-                  return const Center(child: Text('No hay requerimientos disponibles'));
+                  return const Center(
+                      child: Text('No hay requerimientos disponibles'));
                 }
                 return ListView.builder(
-                  padding: const EdgeInsets.all(AppTheme.spacingL),
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 88),
                   itemCount: rqs.length,
                   itemBuilder: (context, index) {
                     return Padding(
-                      padding: const EdgeInsets.only(bottom: AppTheme.spacingM),
+                      padding: const EdgeInsets.only(bottom: 12),
                       child: RQCard(
                         rq: rqs[index],
-                        onDelete: () => _handleDelete(context, ref, rqs[index].id, rqs[index].nroRq),
+                        onDelete: () => _handleDelete(
+                            context, ref, rqs[index].id, rqs[index].nroRq),
                       ),
                     );
                   },
@@ -188,10 +249,11 @@ class RQCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final statusColor = AppTheme.getStatusColor(rq.estado);
     final progressColor = AppTheme.getProgressColor(rq.progresoCompra);
-    
+
     return AppCard(
+      padding: EdgeInsets.zero,
       child: Padding(
-        padding: const EdgeInsets.all(AppTheme.spacingL),
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -205,11 +267,15 @@ class RQCard extends StatelessWidget {
                     children: [
                       Text(
                         rq.nroRq,
-                        style: AppTheme.titleLarge.copyWith(fontWeight: FontWeight.bold),
+                        style: AppTheme.titleLarge.copyWith(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 17,
+                        ),
                       ),
                       Text(
                         'Emisión: ${rq.fechaEmision.toLocal().toString().split(' ')[0]}',
-                        style: AppTheme.bodySmall.copyWith(color: AppTheme.textDisabled),
+                        style: AppTheme.bodySmall
+                            .copyWith(color: AppTheme.textDisabled),
                       ),
                     ],
                   ),
@@ -217,7 +283,7 @@ class RQCard extends StatelessWidget {
                 AppBadge(text: rq.estado, color: statusColor),
               ],
             ),
-            const SizedBox(height: AppTheme.spacingL),
+            const SizedBox(height: 12),
 
             // Info items con Wrap o Expanded para evitar desbordamientos laterales
             Row(
@@ -241,45 +307,76 @@ class RQCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: AppTheme.spacingL),
-            const Divider(),
+            const SizedBox(height: 10),
+            const Divider(height: 1),
 
             // Progreso
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppTheme.spacingM),
+              padding: const EdgeInsets.symmetric(vertical: 10),
               child: Column(
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('Progreso de Compra', style: AppTheme.labelMedium),
-                      Text('${rq.progresoCompra.toStringAsFixed(0)}%', 
-                        style: TextStyle(color: progressColor, fontWeight: FontWeight.bold)),
+                      Text('${rq.progresoCompra.toStringAsFixed(0)}%',
+                          style: TextStyle(
+                              color: progressColor,
+                              fontWeight: FontWeight.bold)),
                     ],
                   ),
-                  const SizedBox(height: AppTheme.spacingS),
-                  AppProgressBar(progress: rq.progresoCompra),
+                  const SizedBox(height: 6),
+                  AppProgressBar(progress: rq.progresoCompra, height: 6),
                 ],
               ),
             ),
 
-            // Acciones
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                IconButton(
-                  onPressed: onDelete,
-                  icon: const Icon(Icons.delete_outline, color: AppTheme.error),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onDelete,
+                    icon: const Icon(Icons.delete_outline, size: 20),
+                    label: const Text('Eliminar'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.error,
+                      side: const BorderSide(color: AppTheme.error),
+                      textStyle: AppTheme.labelMedium.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      minimumSize: const Size(0, 40),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: AppTheme.borderRadiusMedium,
+                      ),
+                    ),
+                  ),
                 ),
-                const SizedBox(width: AppTheme.spacingS),
-                AppButton(
-                  text: 'Ver Detalles',
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => RQDetailScreen(rq: rq)),
-                    );
-                  },
-                  icon: Icons.visibility_outlined,
+                const SizedBox(width: AppTheme.spacingM),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                            builder: (_) => RQDetailScreen(rq: rq)),
+                      );
+                    },
+                    icon: const Icon(Icons.visibility_outlined, size: 20),
+                    label: const Text('Detalles'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primary,
+                      foregroundColor: AppTheme.textOnPrimary,
+                      elevation: 1,
+                      textStyle: AppTheme.labelMedium.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      minimumSize: const Size(0, 40),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: AppTheme.borderRadiusMedium,
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),

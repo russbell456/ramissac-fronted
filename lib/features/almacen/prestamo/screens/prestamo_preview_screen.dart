@@ -1,3 +1,4 @@
+import 'package:sistema_ocs/core/theme/app_theme.dart';
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
@@ -177,9 +178,9 @@ class _PrestamoPreviewScreenState extends ConsumerState<PrestamoPreviewScreen> {
                                 vertical: 10,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.green[50],
+                                color: AppTheme.secondaryLight,
                                 borderRadius: BorderRadius.circular(30),
-                                border: Border.all(color: Colors.green.shade200),
+                                border: Border.all(color: AppTheme.secondary),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -187,13 +188,13 @@ class _PrestamoPreviewScreenState extends ConsumerState<PrestamoPreviewScreen> {
                                   Icon(
                                     LucideIcons.info,
                                     size: 18,
-                                    color: Colors.green[700],
+                                    color: AppTheme.secondaryDark,
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
                                     'Muestra este QR al almacenero',
                                     style: TextStyle(
-                                      color: Colors.green[800],
+                                      color: AppTheme.secondaryDark,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -261,14 +262,14 @@ class _PrestamoPreviewScreenState extends ConsumerState<PrestamoPreviewScreen> {
                                         vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: Colors.green[100],
+                                        color: AppTheme.secondaryLight,
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Text(
                                         '${item.cantidad}',
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.green[800],
+                                          color: AppTheme.secondaryDark,
                                         ),
                                       ),
                                     ),
@@ -323,7 +324,7 @@ class _PrestamoPreviewScreenState extends ConsumerState<PrestamoPreviewScreen> {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.blueGrey[50],
+                                color: AppTheme.primaryLight,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(

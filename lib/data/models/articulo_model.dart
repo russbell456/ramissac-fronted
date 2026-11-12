@@ -9,6 +9,14 @@ class ArticuloModel {
   final int stockTotal;
   final String? codigoExcel;
   final String? serie;
+  final String? descripcion;
+  final String? marca;
+  final String? modelo;
+  final String? categoria;
+  final String? medidas;
+  final String? especificaciones;
+  final String? observacion;
+  final String? fichaTecnicaNombre;
   final bool activo;
   final int enPrestamo;
   final List<ArticuloImagenModel> imagenes;
@@ -26,6 +34,14 @@ class ArticuloModel {
     this.stockTotal = 0,
     this.codigoExcel,
     this.serie,
+    this.descripcion,
+    this.marca,
+    this.modelo,
+    this.categoria,
+    this.medidas,
+    this.especificaciones,
+    this.observacion,
+    this.fichaTecnicaNombre,
     this.activo = true,
     this.enPrestamo = 0,
     this.imagenes = const [],
@@ -36,6 +52,12 @@ class ArticuloModel {
   });
 
   bool get esEquipo => tipo.toLowerCase() == 'equipo';
+  bool get esHerramienta => tipo.toLowerCase() == 'herramienta';
+  String get tipoLabel => esEquipo
+      ? 'Equipo'
+      : esHerramienta
+          ? 'Herramienta'
+          : 'Consumible';
 
   factory ArticuloModel.fromJson(Map<String, dynamic> json) {
     return ArticuloModel(
@@ -47,10 +69,19 @@ class ArticuloModel {
       stockTotal: (json['stock_total'] as num?)?.toInt() ?? 0,
       codigoExcel: json['codigo_excel'] as String?,
       serie: json['serie'] as String?,
+      descripcion: json['descripcion'] as String?,
+      marca: json['marca'] as String?,
+      modelo: json['modelo'] as String?,
+      categoria: json['categoria'] as String?,
+      medidas: json['medidas'] as String?,
+      especificaciones: json['especificaciones'] as String?,
+      observacion: json['observacion'] as String?,
+      fichaTecnicaNombre: json['ficha_tecnica_nombre'] as String?,
       activo: json['activo'] as bool? ?? true,
       enPrestamo: (json['en_prestamo'] as num?)?.toInt() ?? 0,
       imagenes: (json['imagenes'] as List?)
-              ?.map((e) => ArticuloImagenModel.fromJson(e as Map<String, dynamic>))
+              ?.map((e) =>
+                  ArticuloImagenModel.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
       creadoPor: (json['creado_por'] as num?)?.toInt(),

@@ -1,759 +1,186 @@
-import 'dart:io';
-import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:intl/intl.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:signature/signature.dart';
+import 'package:sistema_ocs/core/widgets/app_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:sistema_ocs/core/database/db_helper.dart';
 import 'package:sistema_ocs/core/theme/app_theme.dart';
+import 'package:sistema_ocs/core/storage/session_storage.dart';
+import 'package:sistema_ocs/features/rq_urgente/models/rq_status.dart';
 import 'package:sistema_ocs/features/rq_urgente/models/rq_local_model.dart';
+import 'package:sistema_ocs/features/rq_urgente/rq_review_screen.dart';
 import 'package:sistema_ocs/features/rq_urgente/services/urgent_rq_service.dart';
 import 'package:sistema_ocs/features/rq_urgente/urgent_rq_screen.dart';
 
 class RQListScreen extends StatefulWidget {
-  const RQListScreen({super.key});
-
+  final String? flujo;
+  final UrgentRQService? service;
+  final Future<List<RQLocal>> Function()? loadDrafts;
+  const RQListScreen({super.key, this.flujo, this.service, this.loadDrafts});
   @override
   State<RQListScreen> createState() => _RQListScreenState();
 }
 
 class _RQListScreenState extends State<RQListScreen> {
-  List<RQLocal> _requerimientos = [];
-  bool _isLoading = false;
-
+  late final UrgentRQService _service = widget.service ?? UrgentRQService();
+  List<RQLocal> _locales = [];
+  List<Map<String, dynamic>> _remotos = [];
+  bool _loading = true;
+  String? _error;
+  String _filtro = 'Todos';
+  String _query = '';
+  String _rol = '';
   @override
   void initState() {
     super.initState();
-    _refreshList();
+    _refresh();
   }
 
-  void _refreshList() async {
-    final data = await DBHelper.obtenerRQs();
-    setState(() => _requerimientos = data);
-  }
-
-  Future<void> _procesoDeEnvio(RQLocal rq) async {
-    bool? confirmar = await showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(20),
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppTheme.background,
-            borderRadius: AppTheme.borderRadiusExtraLarge,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 30,
-                spreadRadius: 2,
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppTheme.warning.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppTheme.warning.withOpacity(0.3)),
-                ),
-                child: Icon(
-                  LucideIcons.alertTriangle,
-                  color: AppTheme.warning,
-                  size: 40,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                "CONFIRMAR ENVÍO",
-                style: AppTheme.headlineSmall.copyWith(
-                  color: AppTheme.textPrimary,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                "Se enviará al área de Logística. Una vez enviado no podrá editar ni borrar este registro.",
-                textAlign: TextAlign.center,
-                style: AppTheme.bodyMedium.copyWith(
-                  color: AppTheme.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: AppTheme.borderRadiusMedium,
-                        ),
-                        side: BorderSide(color: AppTheme.border),
-                      ),
-                      child: Text(
-                        "CANCELAR",
-                        style: AppTheme.labelLarge.copyWith(
-                          color: AppTheme.textSecondary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primary,
-                        foregroundColor: AppTheme.background,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: AppTheme.borderRadiusMedium,
-                        ),
-                        elevation: 4,
-                        shadowColor: AppTheme.primary.withOpacity(0.4),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(LucideIcons.send, size: 18),
-                          const SizedBox(width: 8),
-                          Text(
-                            "CONTINUAR",
-                            style: AppTheme.labelLarge.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    if (confirmar != true) return;
-
-    final SignatureController sigController = SignatureController(
-      penStrokeWidth: 4,
-      penColor: AppTheme.textPrimary,
-      exportBackgroundColor: AppTheme.background,
-    );
-
-    bool? firmado = await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(20),
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppTheme.background,
-            borderRadius: AppTheme.borderRadiusExtraLarge,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 30,
-                spreadRadius: 2,
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(LucideIcons.edit, color: AppTheme.primary),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      "FIRMA DE CONFORMIDAD",
-                      style: AppTheme.titleMedium.copyWith(
-                        color: AppTheme.textPrimary,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Text(
-                "Su firma es necesaria para validar el requerimiento",
-                style: AppTheme.bodySmall.copyWith(
-                  color: AppTheme.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppTheme.border, width: 2),
-                  borderRadius: AppTheme.borderRadiusLarge,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.textPrimary.withOpacity(0.05),
-                      blurRadius: 10,
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: AppTheme.borderRadiusLarge,
-                  child: SizedBox(
-                    height: 200,
-                    width: 300,
-                    child: Signature(
-                      controller: sigController,
-                      backgroundColor: AppTheme.background,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => Navigator.pop(context, false),
-                      icon: Icon(LucideIcons.arrowLeft, size: 18),
-                      label: Text("VOLVER"),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        side: BorderSide(color: AppTheme.border),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => sigController.clear(),
-                      icon: Icon(LucideIcons.trash2, size: 18),
-                      label: Text("LIMPIAR"),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        side: BorderSide(color: AppTheme.error),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => Navigator.pop(context, true),
-                      icon: Icon(LucideIcons.send, size: 18),
-                      label: Text("ENVIAR"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.secondary,
-                        foregroundColor: AppTheme.background,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    if (firmado != true || sigController.isEmpty) return;
-
-    setState(() => _isLoading = true);
+  Future<void> _refresh() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
-      final signature = await sigController.toPngBytes();
-      final tempDir = await getTemporaryDirectory();
-      final file = await File('${tempDir.path}/firma_final.png').create();
-      await file.writeAsBytes(signature!);
-
-      await UrgentRQService().enviarRequerimiento(
-        servicio: rq.servicio,
-        solicitante: "Residente App",
-        email: "danieldecr7@gmail.com",
-        productosJson: rq.productosJson,
-        firmaFile: file,
-      );
-
-      await _marcarComoEnviado(rq);
+      _rol = await const SessionStorage().read(key: 'user_role') ?? '';
+      final locales =
+          await (widget.loadDrafts?.call() ?? DBHelper.obtenerRQs());
+      if (mounted) setState(() => _locales = locales);
+      try {
+        final remotos = await _service.listar();
+        final ids = locales.map((r) => r.servidorId).whereType<int>().toSet();
+        final vistos = <int>{};
+        final sincronizados = <RQLocal>[];
+        for (final local in locales) {
+          final matches = remotos.where((r) => r['id'] == local.servidorId);
+          if (matches.isNotEmpty) {
+            final remoto = matches.first;
+            local.estadoServidor =
+                (remoto['estado_gestion'] ?? remoto['estado']) as String;
+            local.enviado = remoto['estado'] == 'ENVIADO' ? 1 : 0;
+            local.numero = remoto['numero'] as String;
+            local.obraId = remoto['obra_id'] as int;
+            local.obraCodigo = remoto['obra_codigo'] as String?;
+            local.obraDescripcion = remoto['obra_descripcion'] as String?;
+            if (!local.editable) {
+              local.servicio = remoto['nombre_proyecto'] as String;
+              local.productosJson = jsonEncode((remoto['items'] as List)
+                  .map((i) => {
+                        ...i as Map<String, dynamic>,
+                        'nombre': i['nombre_producto'],
+                        'unidad': i['unidad_medida'],
+                      })
+                  .toList());
+            }
+            await DBHelper.actualizarRQ(local);
+            if (!vistos.add(local.servidorId!)) {
+              continue;
+            }
+          }
+          // Un RQ enviado ausente del listado ya no está disponible para esta sesión.
+          if (local.enviado == 1 &&
+              local.servidorId != null &&
+              matches.isEmpty) {
+            continue;
+          }
+          sincronizados.add(local);
+        }
+        if (mounted) {
+          setState(() {
+            _locales = sincronizados;
+            _remotos = remotos
+                .where((r) => widget.flujo != null || !ids.contains(r['id']))
+                .toList();
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _error =
+              'No se pudo actualizar el historial. ${UrgentRQService.mensajeError(e)}');
+        }
+      }
     } catch (e) {
-      if (e.toString().contains("200") || e.toString().contains("201")) {
-        await _marcarComoEnviado(rq);
-      } else {
-        _showSnack("Error: $e", isError: true);
+      if (mounted) {
+        setState(() => _error = 'No se pudieron cargar los borradores.');
       }
     } finally {
-      setState(() => _isLoading = false);
-      sigController.dispose();
+      if (mounted) setState(() => _loading = false);
     }
   }
 
-  Future<void> _marcarComoEnviado(RQLocal rq) async {
-    rq.enviado = 1;
-    await DBHelper.actualizarRQ(rq);
-    _refreshList();
-    _showSnack("✅ Enviado con éxito a Logística");
+  Future<void> _nuevo() async {
+    await Navigator.push(
+        context, MaterialPageRoute(builder: (_) => const UrgentRQScreen()));
+    if (mounted) await _refresh();
   }
 
-  void _showSnack(String msg, {bool isError = false}) {
-    final overlay = Overlay.of(context);
-    final overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        top: MediaQuery.of(context).padding.top + 60,
-        left: 20,
-        right: 20,
-        child: Material(
-          color: Colors.transparent,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isError ? AppTheme.error : AppTheme.success,
-              borderRadius: AppTheme.borderRadiusLarge,
-              boxShadow: [
-                BoxShadow(
-                  color: (isError ? AppTheme.error : AppTheme.success).withOpacity(0.4),
-                  blurRadius: 15,
-                  spreadRadius: 2,
-                ),
-              ],
-              border: Border.all(
-                color: isError ? AppTheme.error.darken20 : AppTheme.success.darken20,
-                width: 2,
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  isError ? LucideIcons.alertCircle : LucideIcons.checkCircle,
-                  color: AppTheme.background,
-                  size: 24,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    msg,
-                    style: AppTheme.bodyMedium.copyWith(
-                      color: AppTheme.background,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-
-    overlay.insert(overlayEntry);
-    Future.delayed(const Duration(seconds: 3), () => overlayEntry.remove());
+  Future<void> _abrir({RQLocal? local, int? servidorId}) async {
+    await Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (_) =>
+                RqReviewScreen(local: local, servidorId: servidorId)));
+    if (mounted) await _refresh();
   }
 
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppTheme.textPrimary, AppTheme.textPrimary.darken20],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.textPrimary.withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.primary.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppTheme.primary, width: 2),
-                ),
-                child: Icon(
-                  LucideIcons.files,
-                  color: AppTheme.primary,
-                  size: 32,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "REQUERIMIENTOS URGENTES",
-                      style: AppTheme.labelSmall.copyWith(
-                        color: AppTheme.background,
-                        letterSpacing: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "Gestione sus borradores y envíos",
-                      style: AppTheme.bodySmall.copyWith(
-                        color: AppTheme.background.withOpacity(0.8),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              _buildInfoChip(
-                icon: LucideIcons.fileText,
-                text: "TOTAL: ${_requerimientos.length}",
-                color: AppTheme.primary,
-              ),
-              const SizedBox(width: 12),
-              _buildInfoChip(
-                icon: LucideIcons.send,
-                text: "ENVIADOS: ${_requerimientos.where((r) => r.enviado == 1).length}",
-                color: AppTheme.secondary,
-              ),
-              const SizedBox(width: 12),
-              _buildInfoChip(
-                icon: LucideIcons.edit,
-                text: "BORRADORES: ${_requerimientos.where((r) => r.enviado == 0).length}",
-                color: AppTheme.warning,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoChip({required IconData icon, required String text, required Color color}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: AppTheme.borderRadiusMedium,
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 14),
-          const SizedBox(width: 6),
-          Text(
-            text,
-            style: AppTheme.labelSmall.copyWith(
-              color: color,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.all(40),
-        decoration: BoxDecoration(
-          color: AppTheme.background,
-          borderRadius: AppTheme.borderRadiusLarge,
-          border: Border.all(color: AppTheme.border, width: 2),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppTheme.primary.withOpacity(0.05),
-                shape: BoxShape.circle,
-                border: Border.all(color: AppTheme.primary.withOpacity(0.2)),
-              ),
-              child: Icon(
-                LucideIcons.fileX,
-                color: AppTheme.textSecondary.withOpacity(0.4),
-                size: 60,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              "NO HAY REQUERIMIENTOS",
-              style: AppTheme.titleMedium.copyWith(
-                color: AppTheme.textSecondary.withOpacity(0.6),
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              "Crea tu primer requerimiento urgente\npresionando el botón +",
-              textAlign: TextAlign.center,
-              style: AppTheme.bodySmall.copyWith(
-                color: AppTheme.textSecondary.withOpacity(0.5),
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const UrgentRQScreen()),
-                );
-                _refreshList();
-              },
-              icon: Icon(LucideIcons.plus, size: 18),
-              label: Text("CREAR PRIMER RQ"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primary,
-                foregroundColor: AppTheme.background,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: AppTheme.borderRadiusMedium,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRQCard(RQLocal rq, int index) {
-    final bool esEnviado = rq.enviado == 1;
-    final fecha = rq.fecha.split(' ')[0];
-    
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+  bool _visible(String estado, String texto) =>
+      coincideEstadoRq(estado, _filtro) &&
+      texto.toLowerCase().contains(_query) &&
+      (widget.flujo == null ||
+          ['ENVIADO', 'EN_PROCESO', 'FINALIZADO'].contains(estado));
+  Widget _fila({
+    required String nombre,
+    required String estado,
+    required String referencia,
+    required int cantidad,
+    required String fecha,
+    required VoidCallback onTap,
+  }) {
+    final parsed = DateTime.tryParse(fecha);
+    final date = parsed == null ? '' : DateFormat('dd/MM/yyyy').format(parsed);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
       child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: esEnviado ? null : () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => UrgentRQScreen(rqExistente: rq)),
-            );
-            _refreshList();
-          },
-          borderRadius: AppTheme.borderRadiusLarge,
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppTheme.background,
-              borderRadius: AppTheme.borderRadiusLarge,
-              border: Border.all(
-                color: esEnviado ? AppTheme.success.withOpacity(0.2) : AppTheme.warning.withOpacity(0.2),
-                width: 2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.textPrimary.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: esEnviado 
-                        ? AppTheme.success.withOpacity(0.1) 
-                        : AppTheme.warning.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(15),
-                      border: Border.all(
-                        color: esEnviado 
-                          ? AppTheme.success.withOpacity(0.3) 
-                          : AppTheme.warning.withOpacity(0.3),
-                        width: 2,
-                      ),
-                    ),
-                    child: Center(
-                      child: Icon(
-                        esEnviado ? LucideIcons.lock : LucideIcons.fileEdit,
-                        color: esEnviado ? AppTheme.success : AppTheme.warning,
-                        size: 28,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                rq.servicio,
-                                style: AppTheme.titleMedium.copyWith(
-                                  color: AppTheme.textPrimary,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: esEnviado 
-                                  ? AppTheme.success.withOpacity(0.1) 
-                                  : AppTheme.warning.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: esEnviado 
-                                    ? AppTheme.success.withOpacity(0.3) 
-                                    : AppTheme.warning.withOpacity(0.3),
-                                ),
-                              ),
-                              child: Text(
-                                esEnviado ? "ENVIADO" : "BORRADOR",
-                                style: AppTheme.labelSmall.copyWith(
-                                  color: esEnviado ? AppTheme.success : AppTheme.warning,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          "Fecha: $fecha",
-                          style: AppTheme.bodySmall.copyWith(
-                            color: AppTheme.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primary.withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            "#${index + 1}",
-                            style: AppTheme.labelSmall.copyWith(
-                              color: AppTheme.primary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  esEnviado
-                      ? Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppTheme.success.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: AppTheme.success.withOpacity(0.3)),
-                          ),
-                          child: Icon(
-                            LucideIcons.checkCircle,
-                            color: AppTheme.success,
-                            size: 24,
-                          ),
-                        )
-                      : Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [AppTheme.primary, AppTheme.secondary],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppTheme.primary.withOpacity(0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: IconButton(
-                            onPressed: () => _procesoDeEnvio(rq),
-                            icon: Icon(LucideIcons.send, color: AppTheme.background),
-                            tooltip: "Enviar a Logística",
-                          ),
-                        ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFloatingButton() {
-    return Container(
-      margin: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        borderRadius: AppTheme.borderRadiusLarge,
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primary.withOpacity(0.4),
-            blurRadius: 15,
-            spreadRadius: 2,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: FloatingActionButton.extended(
-        onPressed: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const UrgentRQScreen()),
-          );
-          _refreshList();
-        },
-        backgroundColor: AppTheme.primary,
-        foregroundColor: AppTheme.background,
-        elevation: 0,
+        color: AppTheme.surface,
         shape: RoundedRectangleBorder(
-          borderRadius: AppTheme.borderRadiusLarge,
-        ),
-        icon: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(LucideIcons.plus, color: AppTheme.textPrimary, size: 20),
-        ),
-        label: Text(
-          "NUEVO REQUERIMIENTO",
-          style: AppTheme.labelLarge.copyWith(
-            fontWeight: FontWeight.w900,
-            letterSpacing: 0.5,
+            borderRadius: AppTheme.borderRadiusSmall,
+            side: const BorderSide(color: AppTheme.border)),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Expanded(
+                    child: Text(referencia,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTheme.bodySmall)),
+                const SizedBox(width: 8),
+                Flexible(
+                    child: Align(
+                        alignment: Alignment.centerRight,
+                        child: AppStatusBadge(
+                            label: etiquetaRq(estado),
+                            color: colorEstadoRq(estado)))),
+              ]),
+              const SizedBox(height: 6),
+              Text(nombre,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTheme.titleSmall),
+              const SizedBox(height: 6),
+              Row(children: [
+                Expanded(
+                    child: Text(
+                        '$cantidad ${cantidad == 1 ? 'producto' : 'productos'}${date.isEmpty ? '' : ' · $date'}',
+                        style: AppTheme.bodySmall)),
+                const Icon(LucideIcons.chevronRight,
+                    size: 18, color: AppTheme.textDisabled),
+              ]),
+            ]),
           ),
         ),
       ),
@@ -762,54 +189,149 @@ class _RQListScreenState extends State<RQListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final locales = _locales
+        .where((r) =>
+            widget.flujo == null &&
+            _visible(
+                r.estadoServidor, '${r.numero} ${r.servicio} ${r.obraCodigo}'))
+        .toList();
+    final remotos = _remotos
+        .where((r) =>
+            _visible((r['estado_gestion'] ?? r['estado']) as String,
+                '${r['numero']} ${r['nombre_proyecto']} ${r['obra_codigo']}') &&
+            (widget.flujo != 'compras' ||
+                (r['items'] as List).any((i) => [
+                      'POR_COMPRAR',
+                      'EN_PROCESO',
+                      'COMPRADO',
+                      'CERRADO_SIN_COMPRA'
+                    ].contains(i['estado_gestion']))))
+        .toList();
+    final total = locales.length + remotos.length;
+    final canCreate =
+        widget.flujo == null && (!esCompras(_rol) || esLogistica(_rol));
+    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
     return Scaffold(
       backgroundColor: AppTheme.background,
-      body: Column(
-        children: [
-          _buildHeader(),
-          Expanded(
-            child: _isLoading
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: 60,
-                          height: 60,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 3,
-                            valueColor: AlwaysStoppedAnimation(AppTheme.primary),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          "PROCESANDO ENVÍO...",
-                          style: AppTheme.labelMedium.copyWith(
-                            color: AppTheme.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : _requerimientos.isEmpty
-                    ? _buildEmptyState()
-                    : SingleChildScrollView(
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          children: [
-                            ..._requerimientos.asMap().entries.map((entry) {
-                              return _buildRQCard(entry.value, entry.key);
-                            }).toList(),
-                            const SizedBox(height: 80),
+      floatingActionButton: canCreate && !keyboardOpen
+          ? SizedBox(
+              height: 48,
+              child: FloatingActionButton.extended(
+                heroTag: 'nuevo-rq-${widget.flujo ?? 'solicitudes'}',
+                onPressed: _nuevo,
+                icon: const Icon(LucideIcons.plus, size: 20),
+                label: const Text('Nuevo RQ'),
+              ))
+          : null,
+      body: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 960),
+          child: RefreshIndicator(
+            onRefresh: _refresh,
+            child: CustomScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                    child: ColoredBox(
+                  color: AppTheme.surface,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 12, 0),
+                    child: Column(children: [
+                      Row(children: [
+                        Expanded(
+                            child: AppSearchField(
+                                hint: 'Buscar RQ u obra',
+                                onChanged: (v) => setState(
+                                    () => _query = v.trim().toLowerCase()))),
+                        const SizedBox(width: 4),
+                        IconButton(
+                            onPressed: _loading ? null : _refresh,
+                            tooltip: 'Actualizar solicitudes',
+                            icon: const Icon(LucideIcons.refreshCw, size: 20)),
+                      ]),
+                      AppFilterBar(
+                          options: const [
+                            'Todos',
+                            'Pendientes',
+                            'Enviados',
+                            'Finalizados'
                           ],
-                        ),
-                      ),
+                          selected: _filtro,
+                          onSelected: (v) => setState(() => _filtro = v)),
+                    ]),
+                  ),
+                )),
+                SliverToBoxAdapter(
+                    child: SizedBox(
+                        height: 2,
+                        child: _loading
+                            ? const LinearProgressIndicator(minHeight: 2)
+                            : const Divider(height: 1))),
+                SliverToBoxAdapter(
+                    child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+                        child: Text(
+                            '$total ${total == 1 ? 'requerimiento' : 'requerimientos'}',
+                            style: AppTheme.bodySmall))),
+                if (_error != null)
+                  SliverToBoxAdapter(
+                      child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                          child: Row(children: [
+                            const Icon(LucideIcons.wifiOff,
+                                size: 18, color: AppTheme.warning),
+                            const SizedBox(width: 8),
+                            Expanded(
+                                child:
+                                    Text(_error!, style: AppTheme.bodySmall)),
+                            TextButton(
+                                onPressed: _refresh,
+                                child: const Text('Reintentar')),
+                          ]))),
+                if (!_loading && total == 0)
+                  SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: AppEmptyState(
+                          icon: LucideIcons.fileSearch,
+                          title: _query.isNotEmpty || _filtro != 'Todos'
+                              ? 'No hay coincidencias'
+                              : 'Todavía no hay requerimientos')),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate((_, index) {
+                      if (index < locales.length) {
+                        final r = locales[index];
+                        return _fila(
+                            nombre: r.servicio,
+                            estado: r.estadoServidor,
+                            referencia: r.numero ?? 'Borrador local',
+                            cantidad:
+                                (jsonDecode(r.productosJson) as List).length,
+                            fecha: r.fecha,
+                            onTap: () => _abrir(local: r));
+                      }
+                      final r = remotos[index - locales.length];
+                      return _fila(
+                          nombre: r['nombre_proyecto'] as String,
+                          estado:
+                              (r['estado_gestion'] ?? r['estado']) as String,
+                          referencia: r['numero'] as String,
+                          cantidad: (r['items'] as List).length,
+                          fecha: (r['fecha_requerimiento'] ?? '').toString(),
+                          onTap: () => _abrir(servidorId: r['id'] as int));
+                    }, childCount: total),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                    child: SizedBox(height: canCreate ? 88 : 16)),
+              ],
+            ),
           ),
-        ],
+        ),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: _buildFloatingButton(),
     );
   }
 }

@@ -26,12 +26,18 @@ class RQItemResponse {
   });
 
   factory RQItemResponse.fromJson(Map<String, dynamic> json) {
+    final cantidadRaw = json['cantidad'];
+    final cantidad = cantidadRaw is num
+        ? cantidadRaw.toDouble()
+        : double.tryParse(cantidadRaw?.toString() ?? '') ?? 0.0;
     return RQItemResponse(
       id: json['id'] as int,
-      codigo: json['codigo'] as String,
-      descripcion: json['descripcion'] as String,
-      cantidad: (json['cantidad'] as num).toDouble(),
-      unidad: json['unidad'] as String, // Lectura del campo
+      codigo: json['codigo_producto'] as String? ?? 'S/C',
+      descripcion: json['descripcion'] as String? ??
+          json['nombre_producto'] as String? ??
+          'Sin descripción',
+      cantidad: cantidad,
+      unidad: json['unidad_medida']?.toString() ?? '',
       // Asumimos que "ordenes_parciales" es una lista y la dejamos vacía por ahora
       ordenesParciales: (json['ordenes_parciales'] as List<dynamic>?)
           ?.map((i) => OrdenParcialResponse()) // Simulación

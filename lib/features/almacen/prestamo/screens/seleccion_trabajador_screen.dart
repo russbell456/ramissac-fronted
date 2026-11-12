@@ -1,3 +1,4 @@
+import 'package:sistema_ocs/core/theme/app_theme.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -118,7 +119,7 @@ class _SeleccionarTrabajadorScreenState
                             ),
                           ],
                           border: isSelected
-                              ? Border.all(color: Colors.green.shade600, width: 2.5)
+                              ? Border.all(color: AppTheme.secondaryDark, width: 2.5)
                               : null,
                         ),
                         child: Padding(
@@ -192,7 +193,7 @@ class _SeleccionarTrabajadorScreenState
                                 Container(
                                   padding: const EdgeInsets.all(6),
                                   decoration: const BoxDecoration(
-                                    color: Colors.green,
+                                    color: AppTheme.secondaryDark,
                                     shape: BoxShape.circle,
                                   ),
                                   child: const Icon(
@@ -257,7 +258,7 @@ class _SeleccionarTrabajadorScreenState
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green.shade700,
+                      backgroundColor: AppTheme.secondaryDark,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(

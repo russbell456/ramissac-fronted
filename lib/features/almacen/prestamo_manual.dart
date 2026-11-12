@@ -1,3 +1,4 @@
+import 'package:sistema_ocs/core/theme/app_theme.dart';
 import 'dart:convert';
 import 'dart:math';
 import 'dart:ui' as ui;
@@ -104,7 +105,7 @@ class _PrestamoFirmaScreenState extends ConsumerState<PrestamoFirmaScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("✅ Préstamo registrado correctamente"),
-            backgroundColor: Colors.green,
+            backgroundColor: AppTheme.secondaryDark,
           ),
         );
         Navigator.pop(context, true);
@@ -142,9 +143,9 @@ class _PrestamoFirmaScreenState extends ConsumerState<PrestamoFirmaScreen> {
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.white,
-        foregroundColor: Colors.blueGrey[800],
+        foregroundColor: AppTheme.primaryDark,
         shape: const Border(
-          bottom: BorderSide(color: Colors.blueGrey, width: 2),
+          bottom: BorderSide(color: AppTheme.textSecondary, width: 2),
         ),
       ),
       body: SingleChildScrollView(
@@ -188,7 +189,7 @@ class _PrestamoFirmaScreenState extends ConsumerState<PrestamoFirmaScreen> {
             Container(
               height: 160,
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.blueGrey.shade300, width: 1.5),
+                border: Border.all(color: AppTheme.border, width: 1.5),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
@@ -215,8 +216,8 @@ class _PrestamoFirmaScreenState extends ConsumerState<PrestamoFirmaScreen> {
                   icon: const Icon(LucideIcons.eraser, size: 18),
                   label: const Text('Limpiar'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.blueGrey[700],
-                    side: BorderSide(color: Colors.blueGrey.shade300),
+                    foregroundColor: AppTheme.primaryDark,
+                    side: BorderSide(color: AppTheme.border),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -228,7 +229,7 @@ class _PrestamoFirmaScreenState extends ConsumerState<PrestamoFirmaScreen> {
                   icon: const Icon(LucideIcons.save, size: 18),
                   label: const Text('Guardar firma'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueGrey[700],
+                    backgroundColor: AppTheme.primaryDark,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -261,7 +262,7 @@ class _PrestamoFirmaScreenState extends ConsumerState<PrestamoFirmaScreen> {
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green[700],
+                  backgroundColor: AppTheme.secondaryDark,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
@@ -305,7 +306,7 @@ class _PrestamoFirmaScreenState extends ConsumerState<PrestamoFirmaScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.blueGrey[800],
+                  color: AppTheme.primaryDark,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, color: Colors.white, size: 20),
@@ -316,7 +317,7 @@ class _PrestamoFirmaScreenState extends ConsumerState<PrestamoFirmaScreen> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: Colors.blueGrey[800],
+                  color: AppTheme.primaryDark,
                 ),
               ),
             ],
@@ -334,7 +335,7 @@ class _PrestamoFirmaScreenState extends ConsumerState<PrestamoFirmaScreen> {
   }) {
     return Row(
       children: [
-        Icon(icon, color: Colors.blueGrey[800], size: 24),
+        Icon(icon, color: AppTheme.primaryDark, size: 24),
         const SizedBox(width: 10),
         Text(
           title,
@@ -353,7 +354,7 @@ class _PrestamoFirmaScreenState extends ConsumerState<PrestamoFirmaScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: Colors.blueGrey[600]),
+          Icon(icon, size: 18, color: AppTheme.textSecondary),
           const SizedBox(width: 12),
           Expanded(
             flex: 3,
@@ -361,7 +362,7 @@ class _PrestamoFirmaScreenState extends ConsumerState<PrestamoFirmaScreen> {
               '$label:',
               style: const TextStyle(
                 fontWeight: FontWeight.w600,
-                color: Colors.blueGrey,
+                color: AppTheme.textSecondary,
               ),
             ),
           ),
@@ -380,7 +381,7 @@ class _PrestamoFirmaScreenState extends ConsumerState<PrestamoFirmaScreen> {
   Widget _buildItemsTable(List items) {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.blueGrey.shade200),
+        border: Border.all(color: AppTheme.border),
         borderRadius: BorderRadius.circular(12),
         color: Colors.white,
       ),
@@ -389,7 +390,7 @@ class _PrestamoFirmaScreenState extends ConsumerState<PrestamoFirmaScreen> {
         child: Table(
           border: TableBorder(
             horizontalInside: BorderSide(
-              color: Colors.blueGrey.shade200,
+              color: AppTheme.border,
               width: 1,
             ),
           ),
@@ -400,7 +401,7 @@ class _PrestamoFirmaScreenState extends ConsumerState<PrestamoFirmaScreen> {
           children: [
             TableRow(
               decoration: BoxDecoration(
-                color: Colors.blueGrey[700],
+                color: AppTheme.primaryDark,
               ),
               children: [
                 _buildTableCell('Artículo', isHeader: true),

@@ -1,8 +1,9 @@
+import 'package:sistema_ocs/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:sistema_ocs/core/storage/session_storage.dart';
 import 'package:sistema_ocs/features/almacen/prestamo/providers/carrito_provider.dart';
 import 'package:sistema_ocs/features/almacen/prestamo/providers/prestamo_manual_provider.dart';
 import 'package:sistema_ocs/features/almacen/prestamo/screens/prestamo_preview_screen.dart';
@@ -27,7 +28,7 @@ class _CarritoScreenState extends ConsumerState<CarritoScreen> {
 
   Future<void> _loadUserRole() async {
     // Leer role del secure storage
-    const storage = FlutterSecureStorage();
+    const storage = SessionStorage();
     final role = await storage.read(key: 'user_role');
     setState(() {
       userRole = role?.toLowerCase(); // 'almacenero', 'trabajador', etc.
@@ -109,7 +110,7 @@ class _CarritoScreenState extends ConsumerState<CarritoScreen> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.blueGrey[50],
+                    color: AppTheme.primaryLight,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -140,7 +141,7 @@ class _CarritoScreenState extends ConsumerState<CarritoScreen> {
                           fontWeight: FontWeight.w600,
                           color: fechaDevolucion == null
                               ? Colors.grey[600]
-                              : Colors.blueGrey[800],
+                              : AppTheme.primaryDark,
                         ),
                       ),
                     ],
@@ -260,12 +261,12 @@ class _CarritoScreenState extends ConsumerState<CarritoScreen> {
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: Colors.blueGrey[50],
+                                  color: AppTheme.primaryLight,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
                                   LucideIcons.package,
-                                  color: Colors.blueGrey[800],
+                                  color: AppTheme.primaryDark,
                                   size: 24,
                                 ),
                               ),
@@ -295,7 +296,7 @@ class _CarritoScreenState extends ConsumerState<CarritoScreen> {
                               // Controles de cantidad
                               Container(
                                 decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.blueGrey.shade200),
+                                  border: Border.all(color: AppTheme.border),
                                   borderRadius: BorderRadius.circular(30),
                                 ),
                                 child: Row(
@@ -305,7 +306,7 @@ class _CarritoScreenState extends ConsumerState<CarritoScreen> {
                                       icon: Icon(
                                         LucideIcons.minus,
                                         size: 18,
-                                        color: Colors.blueGrey[700],
+                                        color: AppTheme.primaryDark,
                                       ),
                                       onPressed: () {
                                         ref
@@ -334,7 +335,7 @@ class _CarritoScreenState extends ConsumerState<CarritoScreen> {
                                       icon: Icon(
                                         LucideIcons.plus,
                                         size: 18,
-                                        color: Colors.green[700],
+                                        color: AppTheme.secondaryDark,
                                       ),
                                       onPressed: () {
                                         ref
@@ -392,7 +393,7 @@ class _CarritoScreenState extends ConsumerState<CarritoScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: fechaDevolucion == null
                         ? Colors.grey[400]
-                        : Colors.green[700],
+                        : AppTheme.secondaryDark,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(

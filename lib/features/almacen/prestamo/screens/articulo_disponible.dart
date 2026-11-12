@@ -1,3 +1,4 @@
+import 'package:sistema_ocs/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
@@ -93,13 +94,13 @@ class _ArticulosDisponiblesScreenState
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(LucideIcons.packageX, size: 80, color: Colors.blue[200]),
+                  Icon(LucideIcons.packageX, size: 80, color: AppTheme.primary),
                   const SizedBox(height: 16),
                   Text(
                     "No hay resultados",
                     style: TextStyle(
                       fontSize: 18,
-                      color: Colors.blue[800],
+                      color: AppTheme.primary,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -137,12 +138,12 @@ class _ArticulosDisponiblesScreenState
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.blue[50],
+                            color: AppTheme.primaryLight,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
                             LucideIcons.package,
-                            color: Colors.blue[800],
+                            color: AppTheme.primary,
                             size: 28,
                           ),
                         ),
@@ -176,12 +177,12 @@ class _ArticulosDisponiblesScreenState
                           ),
                           decoration: BoxDecoration(
                             color: articulo.stockActual > 0
-                                ? Colors.green[50]
+                                ? AppTheme.secondaryLight
                                 : Colors.red[50],
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: articulo.stockActual > 0
-                                  ? Colors.green.shade200
+                                  ? AppTheme.secondary
                                   : Colors.red.shade200,
                             ),
                           ),
@@ -190,7 +191,7 @@ class _ArticulosDisponiblesScreenState
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
                               color: articulo.stockActual > 0
-                                  ? Colors.green[800]
+                                  ? AppTheme.secondaryDark
                                   : Colors.red[800],
                             ),
                           ),
@@ -204,7 +205,7 @@ class _ArticulosDisponiblesScreenState
           );
         },
         loading: () => const Center(
-          child: CircularProgressIndicator(color: Colors.blue),
+          child: CircularProgressIndicator(color: AppTheme.primary),
         ),
         error: (err, stack) => Center(
           child: Column(
@@ -227,7 +228,7 @@ class _ArticulosDisponiblesScreenState
           if (carrito.isEmpty) return const SizedBox();
 
           return FloatingActionButton.extended(
-            backgroundColor: Colors.green[300], // Verde claro
+            backgroundColor: AppTheme.secondary, // Verde claro
             icon: const Icon(LucideIcons.shoppingCart, color: Colors.white),
             label: Text(
               '${carrito.length}',
@@ -264,7 +265,7 @@ class _ArticulosDisponiblesScreenState
         return AlertDialog(
           title: Row(
             children: [
-              Icon(LucideIcons.package, color: Colors.blue[800]),
+              Icon(LucideIcons.package, color: AppTheme.primary),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -296,7 +297,7 @@ class _ArticulosDisponiblesScreenState
                             setState(() => cantidad--);
                           }
                         },
-                        color: Colors.blue[300]!,
+                        color: AppTheme.primary,
                       ),
                       Container(
                         margin: const EdgeInsets.symmetric(horizontal: 20),
@@ -305,7 +306,7 @@ class _ArticulosDisponiblesScreenState
                           vertical: 10,
                         ),
                         decoration: BoxDecoration(
-                          border: Border.all(color: Colors.blue.shade200),
+                          border: Border.all(color: AppTheme.primary),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
@@ -321,7 +322,7 @@ class _ArticulosDisponiblesScreenState
                         onPressed: () {
                           setState(() => cantidad++);
                         },
-                        color: Colors.green[300]!,
+                        color: AppTheme.secondary,
                       ),
                     ],
                   ),
@@ -344,7 +345,7 @@ class _ArticulosDisponiblesScreenState
             TextButton(
               onPressed: () => Navigator.pop(context),
               style: TextButton.styleFrom(
-                foregroundColor: Colors.blue[800],
+                foregroundColor: AppTheme.primary,
               ),
               child: const Text('Cancelar'),
             ),
@@ -363,7 +364,7 @@ class _ArticulosDisponiblesScreenState
                 Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green[300],
+                backgroundColor: AppTheme.secondary,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),

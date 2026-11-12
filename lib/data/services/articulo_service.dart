@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sistema_ocs/data/models/articulo_imagen_model.dart';
 import 'package:sistema_ocs/data/models/articulo_model.dart';
@@ -17,7 +18,8 @@ class ArticuloService {
   }
 
   Future<List<ArticuloModel>> buscarArticulos(String q) async {
-    final response = await _dio.get('/articulo/buscar', queryParameters: {'q': q});
+    final response =
+        await _dio.get('/articulo/buscar', queryParameters: {'q': q});
     return (response.data as List)
         .map((json) => ArticuloModel.fromJson(json as Map<String, dynamic>))
         .toList();
@@ -33,7 +35,8 @@ class ArticuloService {
     return ArticuloModel.fromJson(response.data as Map<String, dynamic>);
   }
 
-  Future<ArticuloModel> actualizarArticulo(int id, Map<String, dynamic> data) async {
+  Future<ArticuloModel> actualizarArticulo(
+      int id, Map<String, dynamic> data) async {
     final response = await _dio.put('/articulo/$id', data: data);
     return ArticuloModel.fromJson(response.data as Map<String, dynamic>);
   }
@@ -48,16 +51,42 @@ class ArticuloService {
     return ArticuloModel.fromJson(response.data as Map<String, dynamic>);
   }
 
-  Future<ArticuloImagenModel> subirImagen(int articuloId, String filePath) async {
+  Future<ArticuloImagenModel> subirImagen(
+      int articuloId, String filePath) async {
     final formData = FormData.fromMap({
       'file': await MultipartFile.fromFile(filePath),
     });
-    final response = await _dio.post('/articulo/$articuloId/imagenes', data: formData);
+    final response =
+        await _dio.post('/articulo/$articuloId/imagenes', data: formData);
     return ArticuloImagenModel.fromJson(response.data as Map<String, dynamic>);
   }
 
   Future<void> eliminarImagen(int imagenId) async {
     await _dio.delete('/articulo/imagenes/$imagenId');
+  }
+
+  Future<void> subirFicha(int id, String nombre, Uint8List bytes) async {
+    await _dio.post('/articulo/$id/ficha-tecnica',
+        data: FormData.fromMap({
+          'file': MultipartFile.fromBytes(bytes, filename: nombre),
+        }));
+  }
+
+  Future<Uint8List> descargarFicha(int id) async {
+    final response = await _dio.get<List<int>>('/articulo/$id/ficha-tecnica',
+        options: Options(responseType: ResponseType.bytes));
+    return Uint8List.fromList(response.data!);
+  }
+
+  Future<void> subirImagenBytes(int id, String nombre, Uint8List bytes) async {
+    final extension = nombre.split('.').last.toLowerCase();
+    await _dio.post('/articulo/$id/imagenes',
+        data: FormData.fromMap({
+          'file': MultipartFile.fromBytes(bytes,
+              filename: nombre,
+              contentType:
+                  DioMediaType('image', extension == 'png' ? 'png' : 'jpeg')),
+        }));
   }
 }
 

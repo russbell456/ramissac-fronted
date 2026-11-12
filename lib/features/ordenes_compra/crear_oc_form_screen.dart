@@ -79,7 +79,7 @@ class _CrearOCFormScreenState extends ConsumerState<CrearOCFormScreen> {
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: _guardarLocalmente,
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.secondaryDark, foregroundColor: Colors.white),
               child: const Text("GUARDAR LOCALMENTE"),
             )
           ],

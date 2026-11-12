@@ -1,222 +1,151 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_flutter/lucide_flutter.dart';
-import 'package:sistema_ocs/core/theme/app_theme.dart';
 import 'package:sistema_ocs/data/models/articulo_model.dart';
 import 'package:sistema_ocs/features/almacen/articulos/articulo_provider.dart';
-
-enum _TipoArticulo { insumo, equipo }
+import 'package:sistema_ocs/features/rq_urgente/widgets/rq_widgets.dart';
 
 class ArticuloFormScreen extends ConsumerStatefulWidget {
   final ArticuloModel? articulo;
-
   const ArticuloFormScreen({super.key, this.articulo});
-
-  bool get isEdit => articulo != null;
-
   @override
   ConsumerState<ArticuloFormScreen> createState() => _ArticuloFormScreenState();
 }
 
 class _ArticuloFormScreenState extends ConsumerState<ArticuloFormScreen> {
-  final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _nombreController;
-  late final TextEditingController _unidadController;
-  late final TextEditingController _codigoController;
-  late final TextEditingController _serieController;
-  late _TipoArticulo _tipo;
+  final _form = GlobalKey<FormState>();
+  late final Map<String, TextEditingController> _fields;
+  late String _tipo;
   bool _saving = false;
-
   @override
   void initState() {
     super.initState();
     final a = widget.articulo;
-    _nombreController = TextEditingController(text: a?.nombre ?? '');
-    _unidadController = TextEditingController(text: a?.unidadMedida ?? '');
-    _codigoController = TextEditingController(text: a?.codigoExcel ?? '');
-    _serieController = TextEditingController(text: a?.serie ?? '');
-    _tipo = (a != null && a.esEquipo)
-        ? _TipoArticulo.equipo
-        : _TipoArticulo.insumo;
+    _fields = {
+      for (final e in <String, String?>{
+        'nombre': a?.nombre,
+        'unidad_medida': a?.unidadMedida ?? 'UND',
+        'codigo_excel': a?.codigoExcel,
+        'serie': a?.serie,
+        'marca': a?.marca,
+        'modelo': a?.modelo,
+        'categoria': a?.categoria,
+        'descripcion': a?.descripcion,
+        'medidas': a?.medidas,
+        'especificaciones': a?.especificaciones,
+        'observacion': a?.observacion,
+      }.entries)
+        e.key: TextEditingController(text: e.value ?? '')
+    };
+    _tipo = a?.tipo.toUpperCase() ?? 'CONSUMIBLE';
   }
 
   @override
   void dispose() {
-    _nombreController.dispose();
-    _unidadController.dispose();
-    _codigoController.dispose();
-    _serieController.dispose();
+    for (final c in _fields.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 
+  Widget _field(String key, String label,
+          {bool required = false, int lines = 1, int? maxLength}) =>
+      TextFormField(
+          controller: _fields[key],
+          minLines: lines,
+          maxLines: lines == 1 ? 1 : 4,
+          maxLength: maxLength,
+          decoration: InputDecoration(labelText: label, counterText: ''),
+          validator: (v) => required &&
+                  (v == null || v.trim().length < (key == 'nombre' ? 2 : 1))
+              ? 'Complete este campo'
+              : null);
   Future<void> _guardar() async {
-    if (!_formKey.currentState!.validate()) return;
-
+    if (_saving || !_form.currentState!.validate()) return;
     setState(() => _saving = true);
-
-    final data = {
-      'nombre': _nombreController.text.trim(),
-      'unidad_medida': _unidadController.text.trim(),
-      'tipo': _tipo.name,
-      'codigo_excel': _codigoController.text.trim(),
-      'serie': _serieController.text.trim(),
+    final data = <String, dynamic>{
+      for (final e in _fields.entries)
+        e.key: e.value.text.trim().isEmpty ? null : e.value.text.trim(),
+      'tipo': _tipo
     };
-
     try {
       final notifier = ref.read(articulosListProvider.notifier);
-      if (widget.isEdit) {
-        await notifier.actualizar(widget.articulo!.id, data);
-      } else {
+      if (widget.articulo == null) {
         await notifier.crear(data);
+      } else {
+        await notifier.actualizar(widget.articulo!.id, data);
       }
-      if (!mounted) return;
-      Navigator.pop(context, true);
+      if (mounted) Navigator.pop(context, true);
     } catch (e) {
-      if (!mounted) return;
-      setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al guardar: $e'),
-          backgroundColor: AppTheme.error,
-        ),
-      );
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('No se pudo guardar el producto: $e')));
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.background,
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(
-        title: Text(widget.isEdit ? 'Editar Artículo' : 'Nuevo Artículo'),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppTheme.spacingL),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Información del artículo',
-                  style: AppTheme.titleMedium),
-              const SizedBox(height: AppTheme.spacingL),
-
-              TextFormField(
-                controller: _nombreController,
-                decoration: AppTheme.inputDecoration.copyWith(
-                  labelText: 'Nombre *',
-                  hintText: 'Ej: Laptop HP Pavilion',
-                  prefixIcon: const Icon(LucideIcons.package),
-                ),
-                textCapitalization: TextCapitalization.words,
-                validator: (v) => (v == null || v.trim().isEmpty)
-                    ? 'Ingrese el nombre'
-                    : null,
-              ),
-              const SizedBox(height: AppTheme.spacingL),
-
-              TextFormField(
-                controller: _unidadController,
-                decoration: AppTheme.inputDecoration.copyWith(
-                  labelText: 'Unidad de medida',
-                  hintText: 'Ej: unidad, caja, m²',
-                  prefixIcon: const Icon(LucideIcons.ruler),
-                ),
-              ),
-              const SizedBox(height: AppTheme.spacingL),
-
-              TextFormField(
-                controller: _codigoController,
-                decoration: AppTheme.inputDecoration.copyWith(
-                  labelText: 'Código (excel)',
-                  prefixIcon: const Icon(LucideIcons.barcode),
-                ),
-              ),
-              const SizedBox(height: AppTheme.spacingL),
-
-              TextFormField(
-                controller: _serieController,
-                decoration: AppTheme.inputDecoration.copyWith(
-                  labelText: 'Número de serie',
-                  prefixIcon: const Icon(LucideIcons.hash),
-                ),
-              ),
-              const SizedBox(height: AppTheme.spacingXL),
-
-              Text('Tipo de artículo', style: AppTheme.titleMedium),
-              const SizedBox(height: AppTheme.spacingM),
-              Row(
-                children: [
-                  Expanded(
-                    child: _tipoSelector(
-                      tipo: _TipoArticulo.insumo,
-                      icon: LucideIcons.package,
-                      label: 'Insumo',
-                      subtitle: 'Tiene stock múltiple',
-                    ),
-                  ),
-                  const SizedBox(width: AppTheme.spacingM),
-                  Expanded(
-                    child: _tipoSelector(
-                      tipo: _TipoArticulo.equipo,
-                      icon: LucideIcons.laptop,
-                      label: 'Equipo',
-                      subtitle: 'Stock = 1 (por serie)',
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppTheme.spacingXXXL),
-
-              AppButton(
-                text: widget.isEdit ? 'Guardar cambios' : 'Crear artículo',
-                icon: LucideIcons.save,
-                isFullWidth: true,
-                onPressed: _saving ? () {} : _guardar,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _tipoSelector({
-    required _TipoArticulo tipo,
-    required IconData icon,
-    required String label,
-    required String subtitle,
-  }) {
-    final selected = _tipo == tipo;
-    return InkWell(
-      borderRadius: AppTheme.borderRadiusLarge,
-      onTap: () => setState(() => _tipo = tipo),
-      child: Container(
-        padding: const EdgeInsets.all(AppTheme.spacingL),
-        decoration: BoxDecoration(
-          color: selected ? AppTheme.primaryLight : AppTheme.surface,
-          borderRadius: AppTheme.borderRadiusLarge,
-          border: Border.all(
-            color: selected ? AppTheme.primary : AppTheme.border,
-            width: selected ? 2 : 1,
-          ),
-        ),
-        child: Column(
-          children: [
-            Icon(icon,
-                color: selected ? AppTheme.primary : AppTheme.textDisabled,
-                size: AppTheme.iconSizeExtraLarge),
-            const SizedBox(height: AppTheme.spacingS),
-            Text(label,
-                style: AppTheme.labelLarge.copyWith(
-                  color: selected ? AppTheme.primary : AppTheme.textPrimary,
-                )),
-            const SizedBox(height: AppTheme.spacingXS),
-            Text(subtitle,
-                textAlign: TextAlign.center, style: AppTheme.labelSmall),
-          ],
-        ),
-      ),
-    );
-  }
+          title: Text(
+              widget.articulo == null ? 'Nuevo producto' : 'Editar producto')),
+      body: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 800),
+              child: Form(
+                  key: _form,
+                  child: ListView(padding: const EdgeInsets.all(20), children: [
+                    RqSection(
+                        title: 'Identificación',
+                        child: Column(children: [
+                          _field('nombre', 'Nombre *',
+                              required: true, maxLength: 150),
+                          const SizedBox(height: 12),
+                          DropdownButtonFormField<String>(
+                              initialValue: _tipo,
+                              decoration:
+                                  const InputDecoration(labelText: 'Tipo *'),
+                              items: const [
+                                DropdownMenuItem(
+                                    value: 'CONSUMIBLE',
+                                    child: Text('Consumible')),
+                                DropdownMenuItem(
+                                    value: 'EQUIPO', child: Text('Equipo')),
+                                DropdownMenuItem(
+                                    value: 'HERRAMIENTA',
+                                    child: Text('Herramienta')),
+                              ],
+                              onChanged: (v) => setState(() => _tipo = v!)),
+                          const SizedBox(height: 12),
+                          _field('unidad_medida', 'Unidad de medida *',
+                              required: true, maxLength: 50),
+                          const SizedBox(height: 12),
+                          _field('codigo_excel', 'Código', maxLength: 100),
+                          const SizedBox(height: 12),
+                          _field('categoria', 'Categoría', maxLength: 100),
+                        ])),
+                    const SizedBox(height: 16),
+                    RqSection(
+                        title: 'Ficha del producto',
+                        child: Column(children: [
+                          _field('descripcion', 'Descripción', lines: 2),
+                          const SizedBox(height: 12),
+                          _field('medidas', 'Medidas', maxLength: 150),
+                          const SizedBox(height: 12),
+                          _field(
+                              'especificaciones', 'Especificaciones técnicas',
+                              lines: 2),
+                          const SizedBox(height: 12),
+                          _field('observacion', 'Observación', lines: 2),
+                          const SizedBox(height: 12),
+                          _field('marca', 'Marca', maxLength: 100),
+                          const SizedBox(height: 12),
+                          _field('modelo', 'Modelo', maxLength: 150),
+                          const SizedBox(height: 12),
+                          _field('serie', 'Número de serie', maxLength: 150),
+                        ])),
+                  ])))),
+      bottomNavigationBar: RqFooter(
+          label: 'Guardar producto', busy: _saving, onPressed: _guardar));
 }

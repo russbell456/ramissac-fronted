@@ -14,8 +14,9 @@ void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const ProviderScope(child: OCSApp()));
+    await tester.pumpAndSettle();
 
     // Verify that the login screen title is present.
-    expect(find.text('Iniciar Sesión OCS'), findsOneWidget);
+    expect(find.text('Bienvenido a Ramis'), findsOneWidget);
   });
 }

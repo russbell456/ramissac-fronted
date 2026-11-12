@@ -1,7 +1,7 @@
 // lib/features/almacen/almacen_main_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:sistema_ocs/core/storage/session_storage.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import 'package:sistema_ocs/core/theme/app_theme.dart';
 import 'package:sistema_ocs/features/almacen/alamacenero/escanear_qr_screen.dart';
@@ -16,7 +16,7 @@ class AlmacenMainScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return FutureBuilder<String?>(
-      future: const FlutterSecureStorage().read(key: 'user_role'),
+      future: const SessionStorage().read(key: 'user_role'),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
@@ -142,14 +142,14 @@ class AlmacenMainScreen extends ConsumerWidget {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.green[50],
+                              color: AppTheme.secondaryLight,
                               borderRadius: BorderRadius.circular(30),
-                              border: Border.all(color: Colors.green.shade200),
+                              border: Border.all(color: AppTheme.secondary),
                             ),
                             child: Text(
                               'Rol: ${role.toUpperCase()}',
                               style: TextStyle(
-                                color: Colors.green[800],
+                                color: AppTheme.secondaryDark,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -186,7 +186,7 @@ class AlmacenMainScreen extends ConsumerWidget {
                               icon: LucideIcons.rotateCcw,
                               title: 'Devolver Equipos',
                               subtitle: 'Ve tus pendientes y genera QR de devolución',
-                              color: Colors.green[700]!,
+                              color: AppTheme.secondaryDark,
                               onTap: () {
                                 Navigator.push(
                                   context,
@@ -205,7 +205,7 @@ class AlmacenMainScreen extends ConsumerWidget {
                               icon: LucideIcons.qrCode,
                               title: 'Escanear QR',
                               subtitle: 'Confirma préstamos o devoluciones escaneando',
-                              color: Colors.deepPurple,
+                              color: AppTheme.primary,
                               onTap: () {
                                 Navigator.push(
                                   context,
@@ -224,7 +224,7 @@ class AlmacenMainScreen extends ConsumerWidget {
                             icon: LucideIcons.fileText,
                             title: 'Préstamo Manual',
                             subtitle: 'Genera un préstamo sin QR',
-                            color: Colors.teal[700]!,
+                            color: AppTheme.primary,
                             onTap: () {
                               Navigator.push(
                                 context,

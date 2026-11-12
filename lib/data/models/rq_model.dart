@@ -28,14 +28,14 @@ class RQResponse {
   factory RQResponse.fromJson(Map<String, dynamic> json) {
     return RQResponse(
       id: json['id'] as int,
-      nroRq: json['nro_rq'] as String,
-      proyecto: json['proyecto'] as String,
-      solicitante: json['solicitante'] as String,
-      // Manejar la fecha (puede venir como String o DateTime)
-      fechaEmision: DateTime.parse(json['fecha_emision'] as String), 
-      estado: json['estado'] as String,
-      estadoCompra: json['estado_compra'] as String,
-      progresoCompra: (json['progreso_compra'] as num).toDouble(),
+      nroRq: json['numero']?.toString() ?? '',
+      proyecto: json['nombre_proyecto']?.toString() ?? '',
+      solicitante: json['solicitante_nombre']?.toString() ?? '',
+      fechaEmision: DateTime.tryParse(json['fecha_requerimiento']?.toString() ?? '') ?? DateTime.now(),
+      estado: json['estado']?.toString() ?? 'BORRADOR',
+      // Estos campos todavía no forman parte del módulo RQ Campo del backend.
+      estadoCompra: json['estado_compra'] as String? ?? 'sin_compras',
+      progresoCompra: (json['progreso_compra'] as num?)?.toDouble() ?? 0,
       // Mapear la lista de ítems
       items: (json['items'] as List<dynamic>?)
           ?.map((i) => RQItemResponse.fromJson(i as Map<String, dynamic>))

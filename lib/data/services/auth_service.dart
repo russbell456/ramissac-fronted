@@ -1,13 +1,13 @@
 // lib/services/auth_service.dart
 import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:sistema_ocs/core/storage/session_storage.dart';
 import '../models/token_model.dart';
 import '../models/user_model.dart';
 
 class AuthService {
   final Dio _dio;
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  final SessionStorage _storage = const SessionStorage();
 
   AuthService(this._dio);
 

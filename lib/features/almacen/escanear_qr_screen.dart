@@ -1,3 +1,4 @@
+import 'package:sistema_ocs/core/theme/app_theme.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -129,14 +130,14 @@ class _ScanQRScreenState extends State<ScanQRScreen>
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(24),
                             border: Border.all(
-                              color: Colors.cyan.withOpacity(
+                              color: AppTheme.primary.withOpacity(
                                 0.6 + 0.4 * _animationController.value,
                               ),
                               width: 3,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.cyan.withOpacity(
+                                color: AppTheme.primary.withOpacity(
                                   0.3 + 0.2 * _animationController.value,
                                 ),
                                 blurRadius: 20,
@@ -162,16 +163,16 @@ class _ScanQRScreenState extends State<ScanQRScreen>
                               gradient: LinearGradient(
                                 colors: [
                                   Colors.transparent,
-                                  Colors.cyan.withOpacity(0.8),
-                                  Colors.cyan,
-                                  Colors.cyan.withOpacity(0.8),
+                                  AppTheme.primary.withOpacity(0.8),
+                                  AppTheme.primary,
+                                  AppTheme.primary.withOpacity(0.8),
                                   Colors.transparent,
                                 ],
                                 stops: const [0.0, 0.2, 0.5, 0.8, 1.0],
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.cyan.withOpacity(0.5),
+                                  color: AppTheme.primary.withOpacity(0.5),
                                   blurRadius: 8,
                                   spreadRadius: 1,
                                 ),
@@ -244,16 +245,16 @@ class _ScanQRScreenState extends State<ScanQRScreen>
           decoration: BoxDecoration(
             border: Border(
               top: alignment == Alignment.topLeft || alignment == Alignment.topRight
-                  ? const BorderSide(color: Colors.cyan, width: 4)
+                  ? const BorderSide(color: AppTheme.primary, width: 4)
                   : BorderSide.none,
               bottom: alignment == Alignment.bottomLeft || alignment == Alignment.bottomRight
-                  ? const BorderSide(color: Colors.cyan, width: 4)
+                  ? const BorderSide(color: AppTheme.primary, width: 4)
                   : BorderSide.none,
               left: alignment == Alignment.topLeft || alignment == Alignment.bottomLeft
-                  ? const BorderSide(color: Colors.cyan, width: 4)
+                  ? const BorderSide(color: AppTheme.primary, width: 4)
                   : BorderSide.none,
               right: alignment == Alignment.topRight || alignment == Alignment.bottomRight
-                  ? const BorderSide(color: Colors.cyan, width: 4)
+                  ? const BorderSide(color: AppTheme.primary, width: 4)
                   : BorderSide.none,
             ),
           ),
