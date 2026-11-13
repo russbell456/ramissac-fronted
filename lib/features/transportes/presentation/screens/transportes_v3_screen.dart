@@ -1,3 +1,4 @@
+import 'package:sistema_ocs/core/design_system/ramis_design_system.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -33,7 +34,7 @@ class _TransportesV3ScreenState extends ConsumerState<TransportesV3Screen> {
   void initState() {
     super.initState();
     _load();
-    _timer = Timer.periodic(const Duration(seconds: 30), (_) => _load());
+    _timer = Timer.periodic(Duration(seconds: 30), (_) => _load());
   }
 
   @override
@@ -97,16 +98,19 @@ class _TransportesV3ScreenState extends ConsumerState<TransportesV3Screen> {
         context: context,
         builder: (ctx) => _FullPage(
                 title: Text(titulo),
-                content:
-                    TextField(controller: controller, obscureText: secreto),
+                content: RamisTextField(
+                    controller: controller, obscureText: secreto),
                 actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Volver')),
-                  FilledButton(
-                      onPressed: () =>
-                          Navigator.pop(ctx, controller.text.trim()),
-                      child: const Text('Guardar'))
+                  RamisButton(
+                    label: 'Volver',
+                    onPressed: () => Navigator.pop(ctx),
+                    variant: RamisButtonVariant.text,
+                  ),
+                  RamisButton(
+                    label: 'Guardar',
+                    onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+                    variant: RamisButtonVariant.primary,
+                  )
                 ]));
     controller.dispose();
     return value;
@@ -137,205 +141,217 @@ class _TransportesV3ScreenState extends ConsumerState<TransportesV3Screen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Documentos y alertas'), actions: [
-          IconButton(onPressed: _load, icon: const Icon(Icons.refresh))
-        ]),
+  Widget build(BuildContext context) => RamisScaffold(
+        maxContentWidth: 1200,
+        appBar: RamisAppBar(
+          title: 'Documentos y alertas',
+          automaticallyImplyLeading: true,
+          actions: [IconButton(onPressed: _load, icon: Icon(Icons.refresh))],
+        ),
         body: RefreshIndicator(
             onRefresh: _load,
-            child: ListView(padding: const EdgeInsets.all(16), children: [
-              if (_error != null)
-                Text(_error!, style: const TextStyle(color: Colors.red)),
-              ListTile(
-                  title:
-                      Text('Reportes pendientes de sincronizar: $_pendientes'),
-                  subtitle: Text(
-                      ref.read(transporteRepositoryProvider).queue.lastError ??
-                          'Reintento automático al recuperar conexión'),
-                  trailing: IconButton(
-                      icon: const Icon(Icons.sync),
-                      onPressed: () => _run(() async {
-                            await ref
-                                .read(transporteRepositoryProvider)
-                                .queue
-                                .flush();
-                          }))),
-              for (final aviso in _avisos)
-                Card(
-                    child: ListTile(
-                        leading: Icon(aviso['persistente'] == true
-                            ? Icons.warning_amber
-                            : Icons.notifications),
-                        title: Text('${aviso['titulo']}'),
-                        subtitle: Text('${aviso['mensaje']}'),
-                        trailing: TextButton(
-                            onPressed: () => _run(() async {
-                                  await ref
-                                      .read(transporteRepositoryProvider)
-                                      .postV3(
-                                          '/api/transportes/notificaciones/${aviso['id']}/leer',
-                                          {});
-                                }),
-                            child: Text(aviso['persistente'] == true
-                                ? 'Leída · Activa'
-                                : 'Marcar leída')))),
-              if (_admin)
-                Wrap(spacing: 8, children: [
-                  OutlinedButton(
-                      onPressed: () => _run(_altaVehiculo),
-                      child: const Text('Alta rápida de vehículo')),
-                  OutlinedButton(
-                      onPressed: () => _run(_altaConductor),
-                      child: const Text('Alta rápida de conductor')),
-                  OutlinedButton(
-                      onPressed: () => _run(() async {
-                            final conductores = await ref
-                                .read(transporteRepositoryProvider)
-                                .listarTrabajadores();
-                            if (!context.mounted) return;
-                            await showDialog<void>(
-                                context: context,
-                                builder: (ctx) => _FullPage(
-                                    title:
-                                        const Text('Documentos de conductores'),
-                                    content: SizedBox(
-                                        width: double.infinity,
-                                        child: ListView(
-                                            shrinkWrap: true,
-                                            children: [
-                                              for (final c in conductores.where(
-                                                  (c) =>
-                                                      c['role'] == 'conductor'))
-                                                ListTile(
-                                                    title: Text(
-                                                        '${c['nombre']} ${c['apellidos']}'),
-                                                    subtitle:
-                                                        Text('${c['dni']}'),
-                                                    trailing: TextButton(
-                                                        onPressed: () =>
-                                                            _run(() async {
-                                                              final correo = await _texto(
-                                                                  'Correo de acceso del conductor',
-                                                                  inicial: c[
-                                                                          'email']
-                                                                      as String?);
-                                                              if (correo ==
-                                                                  null) {
-                                                                return;
-                                                              }
-                                                              final password =
-                                                                  await _texto(
-                                                                      'Contraseña inicial (mínimo 8 caracteres)',
-                                                                      secreto:
-                                                                          true);
-                                                              if (password ==
-                                                                  null) {
-                                                                return;
-                                                              }
-                                                              await ref
-                                                                  .read(
-                                                                      dioProvider)
-                                                                  .put(
-                                                                      '/api/transportes/conductores/${c['id']}/acceso',
-                                                                      data: {
-                                                                    'email':
-                                                                        correo,
-                                                                    'password':
-                                                                        password
-                                                                  });
-                                                            }),
-                                                        child: const Text(
-                                                            'Configurar acceso')),
-                                                    onTap: () => _run(() =>
-                                                        _documentos(
-                                                            'conductor',
-                                                            (c['id'] as num)
-                                                                .toInt())))
-                                            ]))));
-                          }),
-                      child: const Text('Documentos de conductores')),
-                  OutlinedButton(
-                      onPressed: () => _run(_firma),
-                      child: const Text('Mi firma administrativa')),
-                  OutlinedButton(
-                      onPressed: () => _run(() async {
-                            final eventos = await ref
-                                .read(transporteRepositoryProvider)
-                                .getV3('/api/transportes/auditoria') as List;
-                            if (!context.mounted) return;
-                            await showDialog<void>(
-                                context: context,
-                                builder: (ctx) => _FullPage(
-                                    title: const Text('Bitácora de auditoría'),
-                                    content: SizedBox(
-                                        width: double.infinity,
-                                        child: ListView(
-                                            shrinkWrap: true,
-                                            children: [
-                                              for (final e in eventos)
-                                                ListTile(
-                                                    title: Text(
-                                                        '${e['accion']} · ${e['entidad']} #${e['registro_id']}'),
-                                                    subtitle: Text(
-                                                        '${e['fecha']} · Usuario ${e['usuario_id']}\n${e['motivo'] ?? ""}'))
-                                            ]))));
-                          }),
-                      child: const Text('Auditoría')),
-                ]),
-              const Text('Flota y documentación',
-                  style: TextStyle(fontSize: 20)),
-              for (final v in _vehiculos)
-                Card(
-                    child: ListTile(
-                        title: Text('${v['placa']} · ${v['modelo']}'),
-                        subtitle: Text(
-                            '${v['kilometraje_actual']} km · ${v['estado_semaforo']}'),
-                        onTap: () =>
-                            _run(() => _detalle(v as Map<String, dynamic>)))),
-              if (_admin) ...[
-                const Text('Odómetros pendientes de regularizar',
-                    style: TextStyle(fontSize: 20)),
-                for (final j in _cierres)
+            child: ListView(
+                padding: EdgeInsets.all(RamisSpacing.medium),
+                children: [
+                  if (_error != null)
+                    Text(_error!, style: TextStyle(color: context.ramis.error)),
                   ListTile(
                       title: Text(
-                          'Jornada #${j['id']} · Conductor ${j['conductor_id']}'),
-                      subtitle: Text('${j['estado']}'),
-                      trailing: TextButton(
-                          onPressed: () => _regularizar(j as Map),
-                          child: const Text('Regularizar cierre'))),
-                const Text('Aprobación de mantenimientos',
-                    style: TextStyle(fontSize: 20)),
-                for (final m in _mantenimientos)
-                  ListTile(
-                      title: Text('Mantenimiento #${m['id']} · ${m['estado']}'),
-                      subtitle: Text('${m['descripcion_falla']}'),
-                      trailing: m['estado'] == 'en_taller'
-                          ? TextButton(
-                              onPressed: () =>
-                                  _run(() => _cerrarMantenimiento(m as Map)),
-                              child: const Text('Aprobar y cerrar'))
-                          : TextButton(
-                              onPressed: () => _run(() => _descargarPdf(
-                                  '/api/mantenimientos/${m['id']}/acta-pdf',
-                                  'mantenimiento-${m['id']}.pdf')),
-                              child: const Text('Acta firmada PDF'))),
-                const Text('Unidades inactivas',
-                    style: TextStyle(fontSize: 20)),
-                for (final v in _inactivos)
-                  ListTile(
-                      title: Text('${v['placa']} · Inactivo'),
-                      subtitle: Text('Baja: ${v['fecha_baja']}')),
-              ],
-              TextButton(
-                  onPressed: () => _run(() async {
-                        final usuario = await ref
-                            .read(currentUserForTransportProvider.future);
-                        if (usuario != null) {
-                          await _documentos('conductor', usuario.id);
-                        }
-                      }),
-                  child: const Text('Mis documentos personales')),
-            ])),
+                          'Reportes pendientes de sincronizar: $_pendientes'),
+                      subtitle: Text(ref
+                              .read(transporteRepositoryProvider)
+                              .queue
+                              .lastError ??
+                          'Reintento automático al recuperar conexión'),
+                      trailing: IconButton(
+                          icon: Icon(Icons.sync),
+                          onPressed: () => _run(() async {
+                                await ref
+                                    .read(transporteRepositoryProvider)
+                                    .queue
+                                    .flush();
+                              }))),
+                  for (final aviso in _avisos)
+                    RamisCard(
+                        padding: EdgeInsets.zero,
+                        child: ListTile(
+                            leading: Icon(aviso['persistente'] == true
+                                ? Icons.warning_amber
+                                : Icons.notifications),
+                            title: Text('${aviso['titulo']}'),
+                            subtitle: Text('${aviso['mensaje']}'),
+                            trailing: RamisButton(
+                              label: aviso['persistente'] == true
+                                  ? 'Leída · Activa'
+                                  : 'Marcar leída',
+                              onPressed: () => _run(() async {
+                                await ref.read(transporteRepositoryProvider).postV3(
+                                    '/api/transportes/notificaciones/${aviso['id']}/leer',
+                                    {});
+                              }),
+                              variant: RamisButtonVariant.text,
+                            ))),
+                  if (_admin)
+                    Wrap(spacing: 8, children: [
+                      RamisButton(
+                        label: 'Alta rápida de vehículo',
+                        onPressed: () => _run(_altaVehiculo),
+                        variant: RamisButtonVariant.outlined,
+                      ),
+                      RamisButton(
+                        label: 'Alta rápida de conductor',
+                        onPressed: () => _run(_altaConductor),
+                        variant: RamisButtonVariant.outlined,
+                      ),
+                      RamisButton(
+                        label: 'Documentos de conductores',
+                        onPressed: () => _run(() async {
+                          final conductores = await ref
+                              .read(transporteRepositoryProvider)
+                              .listarTrabajadores();
+                          if (!context.mounted) return;
+                          await showDialog<void>(
+                              context: context,
+                              builder: (ctx) => _FullPage(
+                                  title: Text('Documentos de conductores'),
+                                  content: SizedBox(
+                                      width: double.infinity,
+                                      child:
+                                          ListView(shrinkWrap: true, children: [
+                                        for (final c in conductores.where(
+                                            (c) => c['role'] == 'conductor'))
+                                          ListTile(
+                                              title: Text(
+                                                  '${c['nombre']} ${c['apellidos']}'),
+                                              subtitle: Text('${c['dni']}'),
+                                              trailing: RamisButton(
+                                                label: 'Configurar acceso',
+                                                onPressed: () => _run(() async {
+                                                  final correo = await _texto(
+                                                      'Correo de acceso del conductor',
+                                                      inicial: c['email']
+                                                          as String?);
+                                                  if (correo == null) {
+                                                    return;
+                                                  }
+                                                  final password = await _texto(
+                                                      'Contraseña inicial (mínimo 8 caracteres)',
+                                                      secreto: true);
+                                                  if (password == null) {
+                                                    return;
+                                                  }
+                                                  await ref.read(dioProvider).put(
+                                                      '/api/transportes/conductores/${c['id']}/acceso',
+                                                      data: {
+                                                        'email': correo,
+                                                        'password': password
+                                                      });
+                                                }),
+                                                variant:
+                                                    RamisButtonVariant.text,
+                                              ),
+                                              onTap: () => _run(() =>
+                                                  _documentos(
+                                                      'conductor',
+                                                      (c['id'] as num)
+                                                          .toInt())))
+                                      ]))));
+                        }),
+                        variant: RamisButtonVariant.outlined,
+                      ),
+                      RamisButton(
+                        label: 'Mi firma administrativa',
+                        onPressed: () => _run(_firma),
+                        variant: RamisButtonVariant.outlined,
+                      ),
+                      RamisButton(
+                        label: 'Auditoría',
+                        onPressed: () => _run(() async {
+                          final eventos = await ref
+                              .read(transporteRepositoryProvider)
+                              .getV3('/api/transportes/auditoria') as List;
+                          if (!context.mounted) return;
+                          await showDialog<void>(
+                              context: context,
+                              builder: (ctx) => _FullPage(
+                                  title: Text('Bitácora de auditoría'),
+                                  content: SizedBox(
+                                      width: double.infinity,
+                                      child:
+                                          ListView(shrinkWrap: true, children: [
+                                        for (final e in eventos)
+                                          ListTile(
+                                              title: Text(
+                                                  '${e['accion']} · ${e['entidad']} #${e['registro_id']}'),
+                                              subtitle: Text(
+                                                  '${e['fecha']} · Usuario ${e['usuario_id']}\n${e['motivo'] ?? ""}'))
+                                      ]))));
+                        }),
+                        variant: RamisButtonVariant.outlined,
+                      ),
+                    ]),
+                  Text('Flota y documentación', style: TextStyle(fontSize: 20)),
+                  for (final v in _vehiculos)
+                    RamisCard(
+                        padding: EdgeInsets.zero,
+                        child: ListTile(
+                            title: Text('${v['placa']} · ${v['modelo']}'),
+                            subtitle: Text(
+                                '${v['kilometraje_actual']} km · ${v['estado_semaforo']}'),
+                            onTap: () => _run(
+                                () => _detalle(v as Map<String, dynamic>)))),
+                  if (_admin) ...[
+                    Text('Odómetros pendientes de regularizar',
+                        style: TextStyle(fontSize: 20)),
+                    for (final j in _cierres)
+                      ListTile(
+                          title: Text(
+                              'Jornada #${j['id']} · Conductor ${j['conductor_id']}'),
+                          subtitle: Text('${j['estado']}'),
+                          trailing: RamisButton(
+                            label: 'Regularizar cierre',
+                            onPressed: () => _regularizar(j as Map),
+                            variant: RamisButtonVariant.text,
+                          )),
+                    Text('Aprobación de mantenimientos',
+                        style: TextStyle(fontSize: 20)),
+                    for (final m in _mantenimientos)
+                      ListTile(
+                          title: Text(
+                              'Mantenimiento #${m['id']} · ${m['estado']}'),
+                          subtitle: Text('${m['descripcion_falla']}'),
+                          trailing: m['estado'] == 'en_taller'
+                              ? RamisButton(
+                                  label: 'Aprobar y cerrar',
+                                  onPressed: () => _run(
+                                      () => _cerrarMantenimiento(m as Map)),
+                                  variant: RamisButtonVariant.text,
+                                )
+                              : RamisButton(
+                                  label: 'Acta firmada PDF',
+                                  onPressed: () => _run(() => _descargarPdf(
+                                      '/api/mantenimientos/${m['id']}/acta-pdf',
+                                      'mantenimiento-${m['id']}.pdf')),
+                                  variant: RamisButtonVariant.text,
+                                )),
+                    Text('Unidades inactivas', style: TextStyle(fontSize: 20)),
+                    for (final v in _inactivos)
+                      ListTile(
+                          title: Text('${v['placa']} · Inactivo'),
+                          subtitle: Text('Baja: ${v['fecha_baja']}')),
+                  ],
+                  RamisButton(
+                    label: 'Mis documentos personales',
+                    onPressed: () => _run(() async {
+                      final usuario = await ref
+                          .read(currentUserForTransportProvider.future);
+                      if (usuario != null) {
+                        await _documentos('conductor', usuario.id);
+                      }
+                    }),
+                    variant: RamisButtonVariant.text,
+                  ),
+                ])),
       );
 
   Future<void> _altaVehiculo() async {
@@ -367,24 +383,28 @@ class _TransportesV3ScreenState extends ConsumerState<TransportesV3Screen> {
     final bytes = await showDialog<Uint8List>(
         context: context,
         builder: (ctx) => _FullPage(
-                title: const Text('Firma autenticada del administrador'),
+                title: Text('Firma autenticada del administrador'),
                 content: SizedBox(
                     width: double.infinity,
                     height: 200,
                     child: Signature(
                         controller: controller, backgroundColor: Colors.white)),
                 actions: [
-                  TextButton(
-                      onPressed: controller.clear,
-                      child: const Text('Limpiar')),
-                  FilledButton(
-                      onPressed: () async {
-                        final image = await controller.toPngBytes();
-                        if (ctx.mounted && image != null) {
-                          Navigator.pop(ctx, image);
-                        }
-                      },
-                      child: const Text('Guardar firma'))
+                  RamisButton(
+                    label: 'Limpiar',
+                    onPressed: controller.clear,
+                    variant: RamisButtonVariant.text,
+                  ),
+                  RamisButton(
+                    label: 'Guardar firma',
+                    onPressed: () async {
+                      final image = await controller.toPngBytes();
+                      if (ctx.mounted && image != null) {
+                        Navigator.pop(ctx, image);
+                      }
+                    },
+                    variant: RamisButtonVariant.primary,
+                  )
                 ]));
     controller.dispose();
     if (bytes == null) return;
@@ -406,44 +426,49 @@ class _TransportesV3ScreenState extends ConsumerState<TransportesV3Screen> {
             content: Column(mainAxisSize: MainAxisSize.min, children: [
               Text(
                   '${vehiculo['kilometraje_actual']} km · Estado ${vehiculo['estado']}'),
-              TextButton(
-                  onPressed: () => _run(() => _documentos('vehiculo', id)),
-                  child: const Text('Vigencias e historial documental')),
-              TextButton(
-                  onPressed: () => _run(() => _reporte(id)),
-                  child: const Text('Descargar reporte PDF')),
-              TextButton(
-                  onPressed: () => _run(() => _observaciones(id)),
-                  child: const Text('Observaciones y reparaciones')),
+              RamisButton(
+                label: 'Vigencias e historial documental',
+                onPressed: () => _run(() => _documentos('vehiculo', id)),
+                variant: RamisButtonVariant.text,
+              ),
+              RamisButton(
+                label: 'Descargar reporte PDF',
+                onPressed: () => _run(() => _reporte(id)),
+                variant: RamisButtonVariant.text,
+              ),
+              RamisButton(
+                label: 'Observaciones y reparaciones',
+                onPressed: () => _run(() => _observaciones(id)),
+                variant: RamisButtonVariant.text,
+              ),
               if (_admin) ...[
-                TextButton(
-                    onPressed: () => _run(() async {
-                          final km =
-                              await _texto('Corrección de odómetro (km)');
-                          if (km == null) return;
-                          final motivo = await _texto(
-                              'Motivo de corrección (mínimo 15 caracteres)');
-                          if (motivo == null) return;
-                          await ref.read(transporteRepositoryProvider).postV3(
-                              '/api/vehiculos/$id/corregir-kilometraje', {
-                            'kilometraje':
-                                double.parse(km.replaceAll(',', '.')),
-                            'motivo': motivo
-                          });
-                        }),
-                    child: const Text('Corregir odómetro · 72 horas')),
-                TextButton(
-                    onPressed: () => _run(() async {
-                          final confirmar = await _texto(
-                              'Escriba la placa para confirmar la baja lógica');
-                          if (confirmar != vehiculo['placa']) return;
-                          await ref
-                              .read(dioProvider)
-                              .delete('/api/vehiculos/$id');
-                          if (ctx.mounted) Navigator.pop(ctx);
-                        }),
-                    child: const Text('Dar de baja',
-                        style: TextStyle(color: Colors.red))),
+                RamisButton(
+                  label: 'Corregir odómetro · 72 horas',
+                  onPressed: () => _run(() async {
+                    final km = await _texto('Corrección de odómetro (km)');
+                    if (km == null) return;
+                    final motivo = await _texto(
+                        'Motivo de corrección (mínimo 15 caracteres)');
+                    if (motivo == null) return;
+                    await ref.read(transporteRepositoryProvider).postV3(
+                        '/api/vehiculos/$id/corregir-kilometraje', {
+                      'kilometraje': double.parse(km.replaceAll(',', '.')),
+                      'motivo': motivo
+                    });
+                  }),
+                  variant: RamisButtonVariant.text,
+                ),
+                RamisButton(
+                  label: 'Dar de baja',
+                  onPressed: () => _run(() async {
+                    final confirmar = await _texto(
+                        'Escriba la placa para confirmar la baja lógica');
+                    if (confirmar != vehiculo['placa']) return;
+                    await ref.read(dioProvider).delete('/api/vehiculos/$id');
+                    if (ctx.mounted) Navigator.pop(ctx);
+                  }),
+                  variant: RamisButtonVariant.text,
+                ),
               ],
             ])));
   }
@@ -458,7 +483,7 @@ class _TransportesV3ScreenState extends ConsumerState<TransportesV3Screen> {
     await showDialog<void>(
         context: context,
         builder: (ctx) => _FullPage(
-            title: const Text('Documentación y versiones'),
+            title: Text('Documentación y versiones'),
             content: SizedBox(
                 width: double.infinity,
                 child: ListView(shrinkWrap: true, children: [
@@ -466,35 +491,37 @@ class _TransportesV3ScreenState extends ConsumerState<TransportesV3Screen> {
                     ListTile(
                         leading: Icon(Icons.description,
                             color: doc['estado'] == 'verde'
-                                ? Colors.green
+                                ? context.ramis.success
                                 : doc['estado'] == 'amarillo'
-                                    ? Colors.orange
-                                    : Colors.red),
+                                    ? context.ramis.warning
+                                    : context.ramis.error),
                         title: Text('${doc['tipo']} · ${doc['estado']}'),
                         subtitle:
                             Text('${doc['fecha_vencimiento'] ?? 'Pendiente'}'),
                         trailing: _admin
-                            ? TextButton(
+                            ? RamisButton(
+                                label: 'Renovar',
                                 onPressed: () => _run(() async {
-                                      final fecha = await _texto(
-                                          'Fecha de vencimiento AAAA-MM-DD');
-                                      if (fecha == null) return;
-                                      final archivo = await _pdf();
-                                      if (archivo == null) return;
-                                      await repo.postV3(
-                                          '/api/transportes/documentos/$entidad/$id',
-                                          {
-                                            'tipo': doc['tipo'],
-                                            'archivo_url': archivo,
-                                            if (fecha.isNotEmpty)
-                                              'fecha_vencimiento': fecha
-                                          });
-                                      if (ctx.mounted) Navigator.pop(ctx);
-                                    }),
-                                child: const Text('Renovar'))
+                                  final fecha = await _texto(
+                                      'Fecha de vencimiento AAAA-MM-DD');
+                                  if (fecha == null) return;
+                                  final archivo = await _pdf();
+                                  if (archivo == null) return;
+                                  await repo.postV3(
+                                      '/api/transportes/documentos/$entidad/$id',
+                                      {
+                                        'tipo': doc['tipo'],
+                                        'archivo_url': archivo,
+                                        if (fecha.isNotEmpty)
+                                          'fecha_vencimiento': fecha
+                                      });
+                                  if (ctx.mounted) Navigator.pop(ctx);
+                                }),
+                                variant: RamisButtonVariant.text,
+                              )
                             : null),
-                  const Divider(),
-                  const Text('Historial archivado'),
+                  Divider(),
+                  Text('Historial archivado'),
                   for (final doc in historial)
                     ListTile(
                         title:
@@ -592,7 +619,7 @@ class _TransportesV3ScreenState extends ConsumerState<TransportesV3Screen> {
     await showDialog<void>(
         context: context,
         builder: (ctx) => _FullPage(
-            title: const Text('Observaciones del vehículo'),
+            title: Text('Observaciones del vehículo'),
             content: SizedBox(
                 width: double.infinity,
                 child: ListView(shrinkWrap: true, children: [
@@ -608,24 +635,26 @@ class _TransportesV3ScreenState extends ConsumerState<TransportesV3Screen> {
                                 FotoObservacion(url: foto as String)
                             ]),
                         trailing: _admin && obs['resuelta'] != true
-                            ? TextButton(
+                            ? RamisButton(
+                                label: 'Aprobar reparación',
                                 onPressed: () => _run(() async {
-                                      final descripcion = await _texto(
-                                          'Descripción detallada de la reparación');
-                                      if (descripcion == null) return;
-                                      final foto = await _foto();
-                                      if (foto == null) return;
-                                      await ref
-                                          .read(transporteRepositoryProvider)
-                                          .postV3(
-                                              '/api/transportes/observaciones/${obs['origen']}/${obs['id']}/resolver',
-                                              {
-                                            'descripcion': descripcion,
-                                            'foto_url': foto
-                                          });
-                                      if (ctx.mounted) Navigator.pop(ctx);
-                                    }),
-                                child: const Text('Aprobar reparación'))
+                                  final descripcion = await _texto(
+                                      'Descripción detallada de la reparación');
+                                  if (descripcion == null) return;
+                                  final foto = await _foto();
+                                  if (foto == null) return;
+                                  await ref
+                                      .read(transporteRepositoryProvider)
+                                      .postV3(
+                                          '/api/transportes/observaciones/${obs['origen']}/${obs['id']}/resolver',
+                                          {
+                                        'descripcion': descripcion,
+                                        'foto_url': foto
+                                      });
+                                  if (ctx.mounted) Navigator.pop(ctx);
+                                }),
+                                variant: RamisButtonVariant.text,
+                              )
                             : null)
                 ]))));
   }
@@ -637,16 +666,17 @@ class _FullPage extends StatelessWidget {
   final Widget title, content;
   final List<Widget> actions;
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) => RamisScaffold(
+      maxContentWidth: 1200,
       appBar: AppBar(title: title),
       body: SafeArea(
           child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16), child: content)),
+              padding: EdgeInsets.all(RamisSpacing.medium), child: content)),
       bottomNavigationBar: actions.isEmpty
           ? null
           : SafeArea(
               child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.all(RamisSpacing.mediumSmall),
                   child: Wrap(
                       alignment: WrapAlignment.end,
                       spacing: 8,

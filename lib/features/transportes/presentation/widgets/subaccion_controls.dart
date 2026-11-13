@@ -1,3 +1,4 @@
+import 'package:sistema_ocs/core/design_system/ramis_design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/jornada_transporte.dart';
@@ -10,8 +11,10 @@ class SubaccionControls extends ConsumerWidget {
   final JornadaTransporte subaccion;
   final Future<void> Function() onChanged;
   @override
-  Widget build(BuildContext context, WidgetRef ref) => Card(
-      color: subaccion.estado == 'cancelada' ? Colors.grey.shade200 : null,
+  Widget build(BuildContext context, WidgetRef ref) => RamisCard(
+      padding: EdgeInsets.zero,
+      color:
+          subaccion.estado == 'cancelada' ? context.ramis.surfaceVariant : null,
       child: ListTile(
           title: Text('${subaccion.accionTipo} · ${subaccion.estado}'),
           subtitle: subaccion.estado == 'cancelada'
@@ -20,12 +23,16 @@ class SubaccionControls extends ConsumerWidget {
               : null,
           trailing: subaccion.estado == 'en_curso'
               ? Wrap(children: [
-                  TextButton(
-                      onPressed: () => _cerrar(context, ref),
-                      child: const Text('Cerrar')),
-                  TextButton(
-                      onPressed: () => _cancelar(context, ref),
-                      child: const Text('Cancelar')),
+                  RamisButton(
+                    label: 'Cerrar',
+                    onPressed: () => _cerrar(context, ref),
+                    variant: RamisButtonVariant.text,
+                  ),
+                  RamisButton(
+                    label: 'Cancelar',
+                    onPressed: () => _cancelar(context, ref),
+                    variant: RamisButtonVariant.text,
+                  ),
                 ])
               : null));
 
@@ -36,17 +43,21 @@ class SubaccionControls extends ConsumerWidget {
         context: context,
         builder: (ctx) => AlertDialog(
                 title: Text(grua ? 'Horómetro final' : 'Odómetro actual'),
-                content: TextField(
+                content: RamisTextField(
                     controller: valor,
                     keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true)),
+                        TextInputType.numberWithOptions(decimal: true)),
                 actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Volver')),
-                  FilledButton(
-                      onPressed: () => Navigator.pop(ctx, valor.text),
-                      child: const Text('Cerrar actividad'))
+                  RamisButton(
+                    label: 'Volver',
+                    onPressed: () => Navigator.pop(ctx),
+                    variant: RamisButtonVariant.text,
+                  ),
+                  RamisButton(
+                    label: 'Cerrar actividad',
+                    onPressed: () => Navigator.pop(ctx, valor.text),
+                    variant: RamisButtonVariant.primary,
+                  )
                 ]));
     valor.dispose();
     final numero = double.tryParse((texto ?? '').replaceAll(',', '.'));
@@ -72,16 +83,20 @@ class SubaccionControls extends ConsumerWidget {
     final aceptar = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-                title: const Text('Cancelar actividad'),
-                content: const Text(
+                title: Text('Cancelar actividad'),
+                content: Text(
                     'La actividad conservará su historial y quedará marcada como cancelada.'),
                 actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(ctx, false),
-                      child: const Text('Volver')),
-                  TextButton(
-                      onPressed: () => Navigator.pop(ctx, true),
-                      child: const Text('Continuar'))
+                  RamisButton(
+                    label: 'Volver',
+                    onPressed: () => Navigator.pop(ctx, false),
+                    variant: RamisButtonVariant.text,
+                  ),
+                  RamisButton(
+                    label: 'Continuar',
+                    onPressed: () => Navigator.pop(ctx, true),
+                    variant: RamisButtonVariant.text,
+                  )
                 ]));
     if (aceptar != true || !context.mounted) return;
     final motivo = TextEditingController();
@@ -89,23 +104,25 @@ class SubaccionControls extends ConsumerWidget {
         context: context,
         builder: (ctx) => StatefulBuilder(
             builder: (ctx, update) => AlertDialog(
-                    title: const Text('Motivo obligatorio'),
-                    content: TextField(
+                    title: Text('Motivo obligatorio'),
+                    content: RamisTextField(
                         controller: motivo,
                         onChanged: (_) => update(() {}),
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                             helperText: 'Mínimo 10 caracteres')),
                     actions: [
-                      TextButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          child: const Text('Volver')),
-                      FilledButton(
-                          style: FilledButton.styleFrom(
-                              backgroundColor: Colors.red),
-                          onPressed: motivo.text.trim().length < 10
-                              ? null
-                              : () => Navigator.pop(ctx, motivo.text.trim()),
-                          child: const Text('Confirmar cancelación'))
+                      RamisButton(
+                        label: 'Volver',
+                        onPressed: () => Navigator.pop(ctx),
+                        variant: RamisButtonVariant.text,
+                      ),
+                      RamisButton(
+                        label: 'Confirmar cancelación',
+                        onPressed: motivo.text.trim().length < 10
+                            ? null
+                            : () => Navigator.pop(ctx, motivo.text.trim()),
+                        variant: RamisButtonVariant.destructive,
+                      )
                     ])));
     motivo.dispose();
     if (razon == null) return;

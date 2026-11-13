@@ -16,6 +16,8 @@ class RamisScaffold extends StatelessWidget {
     this.useScreenPadding = false,
     this.resizeToAvoidBottomInset = true,
     this.backgroundColor,
+    this.drawer,
+    this.maxContentWidth,
     super.key,
   });
 
@@ -30,16 +32,29 @@ class RamisScaffold extends StatelessWidget {
   final bool useScreenPadding;
   final bool resizeToAvoidBottomInset;
   final Color? backgroundColor;
+  final Widget? drawer;
+  final double? maxContentWidth;
 
   @override
   Widget build(BuildContext context) {
     Widget content = body;
+    if (maxContentWidth != null) {
+      content = Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxContentWidth!),
+          child: SizedBox(
+              width: double.infinity, height: double.infinity, child: content),
+        ),
+      );
+    }
     if (useScreenPadding) {
       content = Padding(padding: RamisSpacing.screenPadding, child: content);
     }
     if (safeArea) content = SafeArea(child: content);
 
     return Scaffold(
+      drawer: drawer,
       appBar: appBar ??
           (title == null
               ? null

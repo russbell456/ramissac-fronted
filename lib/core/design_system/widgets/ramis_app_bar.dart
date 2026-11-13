@@ -8,6 +8,8 @@ class RamisAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.actions,
     this.logo,
     this.centerTitle = false,
+    this.bottom,
+    this.automaticallyImplyLeading,
     super.key,
   });
 
@@ -17,10 +19,13 @@ class RamisAppBar extends StatelessWidget implements PreferredSizeWidget {
   final List<Widget>? actions;
   final Widget? logo;
   final bool centerTitle;
+  final PreferredSizeWidget? bottom;
+  final bool? automaticallyImplyLeading;
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      bottom: bottom,
       title: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -31,7 +36,7 @@ class RamisAppBar extends StatelessWidget implements PreferredSizeWidget {
           Flexible(child: Text(title, overflow: TextOverflow.ellipsis)),
         ],
       ),
-      automaticallyImplyLeading: showBackButton,
+      automaticallyImplyLeading: automaticallyImplyLeading ?? showBackButton,
       leading: leading,
       actions: actions,
       centerTitle: centerTitle,
@@ -39,5 +44,6 @@ class RamisAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize =>
+      Size.fromHeight(kToolbarHeight + (bottom?.preferredSize.height ?? 0));
 }

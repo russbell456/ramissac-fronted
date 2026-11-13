@@ -1,3 +1,4 @@
+import 'package:sistema_ocs/core/design_system/ramis_design_system.dart';
 import 'package:flutter/material.dart';
 import 'observacion_fields.dart';
 
@@ -30,7 +31,7 @@ class VehiculoSelector extends StatelessWidget {
             '$value-${visibles.map((v) => "${v['id']}:${v['estado_semaforo']}").join(',')}'),
         initialValue: seleccionado == null ? null : value,
         isExpanded: true,
-        decoration: const InputDecoration(
+        decoration: InputDecoration(
             labelText: 'Vehículo',
             prefixIcon: Icon(Icons.local_shipping_outlined)),
         items: visibles.map((v) {
@@ -42,8 +43,8 @@ class VehiculoSelector extends StatelessWidget {
                 Icon(Icons.circle,
                     size: 14,
                     color: colorSemaforo(
-                        v['estado_semaforo'] as String? ?? 'verde')),
-                const SizedBox(width: 8),
+                        context, v['estado_semaforo'] as String? ?? 'verde')),
+                SizedBox(width: RamisSpacing.small),
                 Expanded(
                     child: Text(
                         rojo
@@ -64,10 +65,10 @@ class VehiculoSelector extends StatelessWidget {
       ),
       if (seleccionado?['estado_semaforo'] == 'amarillo')
         Padding(
-            padding: const EdgeInsets.only(top: 12),
+            padding: EdgeInsets.only(top: RamisSpacing.mediumSmall),
             child: Text(
                 '⚠ Advertencia preventiva: ${seleccionado?['observaciones_pendientes'] ?? 'El vehículo tiene observaciones leves pendientes de revisión.'}',
-                style: const TextStyle(color: Colors.orange))),
+                style: TextStyle(color: context.ramis.warning))),
     ]);
   }
 }

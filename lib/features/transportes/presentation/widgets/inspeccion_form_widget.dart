@@ -1,5 +1,5 @@
+import 'package:sistema_ocs/core/design_system/ramis_design_system.dart';
 import 'package:flutter/material.dart';
-import 'package:sistema_ocs/core/theme/app_theme.dart';
 import 'package:sistema_ocs/features/transportes/domain/entities/jornada_transporte.dart';
 
 class InspeccionFormWidget extends StatefulWidget {
@@ -56,9 +56,9 @@ class _InspeccionFormWidgetState extends State<InspeccionFormWidget> {
           },
         ),
         child: InputDecorator(
-          decoration: AppTheme.inputDecoration.copyWith(
+          decoration: InputDecoration(
             labelText: etiqueta,
-            prefixIcon: const Icon(Icons.calendar_today_outlined),
+            prefixIcon: Icon(Icons.calendar_today_outlined),
             errorText: field.errorText,
           ),
           child: Text(valor == null
@@ -80,7 +80,7 @@ class _InspeccionFormWidgetState extends State<InspeccionFormWidget> {
           valor: _inspeccion,
           onSelected: (fecha) => _inspeccion = fecha,
         ),
-        const SizedBox(height: AppTheme.spacingL),
+        SizedBox(height: RamisSpacing.medium),
         _campoFecha(
           etiqueta: 'FECHA DE VENCIMIENTO DE INSPECCIÓN TÉCNICA',
           valor: _vencimiento,

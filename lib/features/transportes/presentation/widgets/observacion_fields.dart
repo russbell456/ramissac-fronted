@@ -1,3 +1,4 @@
+import 'package:sistema_ocs/core/design_system/ramis_design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -68,7 +69,7 @@ class _ObservacionFieldsState extends ConsumerState<ObservacionFields> {
       type: MaterialType.transparency,
       child: Column(children: [
         SwitchListTile(
-            title: const Text('¿Presenta Observaciones o Novedades?'),
+            title: Text('¿Presenta Observaciones o Novedades?'),
             value: activa,
             onChanged: widget.obligatoria
                 ? null
@@ -77,16 +78,16 @@ class _ObservacionFieldsState extends ConsumerState<ObservacionFields> {
                     _notify();
                   }),
         AnimatedSize(
-            duration: const Duration(milliseconds: 200),
+            duration: Duration(milliseconds: 200),
             child: activa
                 ? Column(children: [
                     DropdownButtonFormField<String>(
                         isExpanded: true,
                         initialValue: _severidad,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                             labelText: 'Severidad',
                             border: OutlineInputBorder()),
-                        items: const [
+                        items: [
                           DropdownMenuItem(
                               value: 'leve',
                               child: Text('Leve · Verde con novedad')),
@@ -102,10 +103,10 @@ class _ObservacionFieldsState extends ConsumerState<ObservacionFields> {
                           setState(() => _severidad = v!);
                           _notify();
                         }),
-                    const SizedBox(height: 12),
-                    TextFormField(
+                    SizedBox(height: RamisSpacing.mediumSmall),
+                    RamisTextField(
                         initialValue: _descripcion,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                             labelText: 'Descripción detallada',
                             border: OutlineInputBorder(),
                             helperText:
@@ -126,18 +127,22 @@ class _ObservacionFieldsState extends ConsumerState<ObservacionFields> {
                             : null,
                         builder: (field) => Column(children: [
                               Wrap(children: [
-                                TextButton.icon(
-                                    onPressed: _cargando
-                                        ? null
-                                        : () => _pick(ImageSource.camera),
-                                    icon: const Icon(Icons.camera_alt),
-                                    label: const Text('Cámara')),
-                                TextButton.icon(
-                                    onPressed: _cargando
-                                        ? null
-                                        : () => _pick(ImageSource.gallery),
-                                    icon: const Icon(Icons.photo_library),
-                                    label: const Text('Galería')),
+                                RamisButton(
+                                  label: 'Cámara',
+                                  onPressed: _cargando
+                                      ? null
+                                      : () => _pick(ImageSource.camera),
+                                  variant: RamisButtonVariant.text,
+                                  icon: Icons.camera_alt,
+                                ),
+                                RamisButton(
+                                  label: 'Galería',
+                                  onPressed: _cargando
+                                      ? null
+                                      : () => _pick(ImageSource.gallery),
+                                  variant: RamisButtonVariant.text,
+                                  icon: Icons.photo_library,
+                                ),
                                 if (_foto != null)
                                   IconButton(
                                       onPressed: _cargando
@@ -149,16 +154,17 @@ class _ObservacionFieldsState extends ConsumerState<ObservacionFields> {
                                               });
                                               _notify();
                                             },
-                                      icon: const Icon(Icons.delete_outline)),
+                                      icon: Icon(Icons.delete_outline)),
                               ]),
-                              if (_cargando) const LinearProgressIndicator(),
+                              if (_cargando) LinearProgressIndicator(),
                               Text(
                                   '${_fotos.length}/5 fotografías · Máximo 10 MB por archivo'),
                               for (final foto in _fotos)
                                 foto.startsWith('local://')
-                                    ? const Chip(
-                                        label: Text(
-                                            'Foto guardada · Pendiente de sincronizar'))
+                                    ? RamisStatusChip(
+                                        label:
+                                            'Foto guardada · Pendiente de sincronizar',
+                                      )
                                     : FotoObservacion(url: foto),
                               if (field.hasError)
                                 Text(field.errorText!,
@@ -168,14 +174,14 @@ class _ObservacionFieldsState extends ConsumerState<ObservacionFields> {
                                             .error)),
                             ])),
                   ])
-                : const SizedBox.shrink()),
+                : SizedBox.shrink()),
       ]));
 }
 
-Color colorSemaforo(String estado) => switch (estado) {
-      'rojo' => Colors.red,
-      'amarillo' => Colors.orange,
-      _ => Colors.green
+Color colorSemaforo(BuildContext context, String estado) => switch (estado) {
+      'rojo' => context.ramis.error,
+      'amarillo' => context.ramis.warning,
+      _ => context.ramis.success
     };
 
 class FotoObservacion extends StatelessWidget {
@@ -192,16 +198,16 @@ class FotoObservacion extends StatelessWidget {
                   Align(
                       alignment: Alignment.topRight,
                       child: IconButton(
-                          icon: const Icon(Icons.close),
+                          icon: Icon(Icons.close),
                           onPressed: () => Navigator.pop(context))),
                   Flexible(
                       child: InteractiveViewer(
                           child: Image.network(ruta,
                               errorBuilder: (_, __, ___) =>
-                                  const Text('Foto no disponible')))),
+                                  Text('Foto no disponible')))),
                 ]))),
         child: Image.network(ruta,
             height: 120,
-            errorBuilder: (_, __, ___) => const Text('Foto no disponible')));
+            errorBuilder: (_, __, ___) => Text('Foto no disponible')));
   }
 }

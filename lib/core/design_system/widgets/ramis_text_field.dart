@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class RamisTextField extends StatelessWidget {
   const RamisTextField({
@@ -20,6 +21,16 @@ class RamisTextField extends StatelessWidget {
     this.focusNode,
     this.autofocus = false,
     this.maxLength,
+    this.decoration,
+    this.initialValue,
+    this.onSaved,
+    this.onTap,
+    this.readOnly = false,
+    this.inputFormatters,
+    this.onFieldSubmitted,
+    this.autovalidateMode,
+    this.autocorrect = true,
+    this.enableSuggestions = true,
     super.key,
   });
 
@@ -41,10 +52,29 @@ class RamisTextField extends StatelessWidget {
   final FocusNode? focusNode;
   final bool autofocus;
   final int? maxLength;
+  final InputDecoration? decoration;
+  final String? initialValue;
+  final FormFieldSetter<String>? onSaved;
+  final VoidCallback? onTap;
+  final bool readOnly;
+  final List<TextInputFormatter>? inputFormatters;
+  final ValueChanged<String>? onFieldSubmitted;
+  final AutovalidateMode? autovalidateMode;
+  final bool autocorrect;
+  final bool enableSuggestions;
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
+      initialValue: initialValue,
+      autocorrect: autocorrect,
+      enableSuggestions: enableSuggestions,
+      onSaved: onSaved,
+      onTap: onTap,
+      readOnly: readOnly,
+      inputFormatters: inputFormatters,
+      onFieldSubmitted: onFieldSubmitted,
+      autovalidateMode: autovalidateMode,
       controller: controller,
       validator: validator,
       keyboardType: keyboardType,
@@ -59,12 +89,13 @@ class RamisTextField extends StatelessWidget {
       focusNode: focusNode,
       autofocus: autofocus,
       maxLength: maxLength,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        prefixIcon: prefixIcon,
-        suffixIcon: suffixIcon,
-      ),
+      decoration: decoration ??
+          InputDecoration(
+            labelText: label,
+            hintText: hint,
+            prefixIcon: prefixIcon,
+            suffixIcon: suffixIcon,
+          ),
     );
   }
 }

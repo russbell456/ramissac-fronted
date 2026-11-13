@@ -1,3 +1,4 @@
+import 'package:sistema_ocs/core/design_system/ramis_design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -17,7 +18,7 @@ class TransportesHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<String?>(
-      future: const FlutterSecureStorage().read(key: 'user_role'),
+      future: FlutterSecureStorage().read(key: 'user_role'),
       builder: (context, snapshot) {
         final currentRole = snapshot.data ?? role;
         final canManage = currentRole == 'admin' || currentRole == 'almacenero';
@@ -28,13 +29,13 @@ class TransportesHomeScreen extends StatelessWidget {
               TabBar(
                 tabs: [
                   if (canManage)
-                    const Tab(
+                    Tab(
                       icon: Icon(Icons.local_shipping),
                       text: 'Vehiculos',
                     ),
-                  const Tab(icon: Icon(Icons.route), text: 'Rutas'),
+                  Tab(icon: Icon(Icons.route), text: 'Rutas'),
                   if (canManage)
-                    const Tab(icon: Icon(Icons.build), text: 'Mantenimientos'),
+                    Tab(icon: Icon(Icons.build), text: 'Mantenimientos'),
                 ],
               ),
               Expanded(
@@ -63,7 +64,7 @@ class VehiculosScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(vehiculosProvider);
     return state.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => RamisLoading(),
       error: (error, _) => _ErrorView(
           message: error.toString(),
           onRetry: () => ref.invalidate(vehiculosProvider)),
@@ -74,9 +75,9 @@ class VehiculosScreen extends ConsumerWidget {
             ? FloatingActionButton(
                 onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const VehiculoFormScreen()),
+                  MaterialPageRoute(builder: (_) => VehiculoFormScreen()),
                 ),
-                child: const Icon(Icons.add),
+                child: Icon(Icons.add),
               )
             : null,
         items: vehicles,
@@ -90,7 +91,7 @@ class VehiculosScreen extends ConsumerWidget {
               ),
             ),
           ),
-          leading: const Icon(Icons.local_shipping),
+          leading: Icon(Icons.local_shipping),
           title: Text('${vehicle.placa} - ${vehicle.marca} ${vehicle.modelo}'),
           subtitle: Text('${vehicle.capacidadCarga} t'),
           trailing: role == 'almacenero'
@@ -124,13 +125,15 @@ class VehiculosScreen extends ConsumerWidget {
                       );
                     }
                   },
-                  itemBuilder: (_) => const [
+                  itemBuilder: (_) => [
                     PopupMenuItem(value: 'historial', child: Text('Historial')),
                     PopupMenuItem(value: 'edit', child: Text('Editar')),
                     PopupMenuItem(value: 'delete', child: Text('Desactivar')),
                   ],
                 )
-              : Chip(label: Text(vehicle.estado)),
+              : RamisStatusChip(
+                  label: vehicle.estado,
+                ),
         ),
       ),
     );
@@ -146,7 +149,7 @@ class RutasScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(rutasProvider);
     return state.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => RamisLoading(),
       error: (error, _) => _ErrorView(
           message: error.toString(),
           onRetry: () => ref.invalidate(rutasProvider)),
@@ -157,21 +160,23 @@ class RutasScreen extends ConsumerWidget {
             ? FloatingActionButton(
                 onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const RutaFormScreen()),
+                  MaterialPageRoute(builder: (_) => RutaFormScreen()),
                 ),
-                child: const Icon(Icons.add),
+                child: Icon(Icons.add),
               )
             : null,
         items: routes,
         itemBuilder: (route) => ListTile(
-          leading: const Icon(Icons.route),
+          leading: Icon(Icons.route),
           title: Text('${route.origen} - ${route.destino}'),
           subtitle: Text(
               'Vehiculo ${route.vehiculoId} | Trabajador ${route.trabajadorId}'),
           trailing: Wrap(
             spacing: 4,
             children: [
-              Chip(label: Text(route.estadoRuta)),
+              RamisStatusChip(
+                label: route.estadoRuta,
+              ),
               if (role == 'trabajador' && route.estadoRuta == 'pendiente')
                 IconButton(
                   tooltip: 'Iniciar ruta',
@@ -181,7 +186,7 @@ class RutasScreen extends ConsumerWidget {
                       builder: (_) => IniciarRutaScreen(route: route),
                     ),
                   ),
-                  icon: const Icon(Icons.play_arrow),
+                  icon: Icon(Icons.play_arrow),
                 ),
               if ((role == 'trabajador' ||
                       role == 'admin' ||
@@ -195,7 +200,7 @@ class RutasScreen extends ConsumerWidget {
                       builder: (_) => FinalizarRutaScreen(route: route),
                     ),
                   ),
-                  icon: const Icon(Icons.stop),
+                  icon: Icon(Icons.stop),
                 ),
               if (role == 'admin' || role == 'almacenero')
                 PopupMenuButton<String>(
@@ -211,7 +216,7 @@ class RutasScreen extends ConsumerWidget {
                       );
                     }
                   },
-                  itemBuilder: (_) => const [
+                  itemBuilder: (_) => [
                     PopupMenuItem(value: 'delete', child: Text('Desactivar')),
                   ],
                 ),
@@ -232,7 +237,7 @@ class MantenimientosScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(mantenimientosProvider);
     return state.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => RamisLoading(),
       error: (error, _) => _ErrorView(
           message: error.toString(),
           onRetry: () => ref.invalidate(mantenimientosProvider)),
@@ -242,20 +247,21 @@ class MantenimientosScreen extends ConsumerWidget {
         floatingActionButton: role == 'admin' || role == 'almacenero'
             ? FloatingActionButton(
                 onPressed: () => _selectVehicleForMaintenance(context, ref),
-                child: const Icon(Icons.add),
+                child: Icon(Icons.add),
               )
             : null,
         items: maintenance,
         itemBuilder: (item) => ListTile(
-          leading: const Icon(Icons.build),
+          leading: Icon(Icons.build),
           title: Text(item.descripcion),
-          subtitle: Text(
-              'Vehiculo ${item.vehiculoId} | '
+          subtitle: Text('Vehiculo ${item.vehiculoId} | '
               '${item.tipoMantenimiento} | S/ ${item.costo.toStringAsFixed(2)}'),
           trailing: role == 'admin' || role == 'almacenero'
               ? Wrap(
                   children: [
-                    Chip(label: Text(item.estadoMantenimiento)),
+                    RamisStatusChip(
+                      label: item.estadoMantenimiento,
+                    ),
                     if (item.estadoEjecucion == 'pendiente')
                       IconButton(
                         tooltip: 'Ejecutar mantenimiento',
@@ -268,7 +274,7 @@ class MantenimientosScreen extends ConsumerWidget {
                             ),
                           ),
                         ),
-                        icon: const Icon(Icons.play_circle),
+                        icon: Icon(Icons.play_circle),
                       ),
                     PopupMenuButton<String>(
                       onSelected: (action) async {
@@ -296,11 +302,11 @@ class MantenimientosScreen extends ConsumerWidget {
                       },
                       itemBuilder: (_) => [
                         if (item.estadoEjecucion == 'pendiente')
-                          const PopupMenuItem(
+                          PopupMenuItem(
                             value: 'ejecutar',
                             child: Text('Ejecutar'),
                           ),
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 'delete',
                           child: Text('Desactivar'),
                         ),
@@ -308,7 +314,9 @@ class MantenimientosScreen extends ConsumerWidget {
                     ),
                   ],
                 )
-              : Chip(label: Text(item.estadoMantenimiento)),
+              : RamisStatusChip(
+                  label: item.estadoMantenimiento,
+                ),
         ),
       ),
     );
@@ -333,19 +341,21 @@ class _ResourceList<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      return Scaffold(
+      return RamisScaffold(
+        maxContentWidth: 1200,
         floatingActionButton: floatingActionButton,
         body: Center(child: Text(emptyMessage)),
       );
     }
-    return Scaffold(
+    return RamisScaffold(
+      maxContentWidth: 1200,
       floatingActionButton: floatingActionButton,
       body: RefreshIndicator(
         onRefresh: onRefresh,
         child: ListView.separated(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(RamisSpacing.mediumSmall),
           itemCount: items.length,
-          separatorBuilder: (_, __) => const Divider(height: 1),
+          separatorBuilder: (_, __) => Divider(height: 1),
           itemBuilder: (_, index) => itemBuilder(items[index]),
         ),
       ),
@@ -362,7 +372,7 @@ Future<void> _selectVehicleForMaintenance(
   final vehicleId = await showDialog<int>(
     context: context,
     builder: (_) => SimpleDialog(
-      title: const Text('Seleccione un vehículo'),
+      title: Text('Seleccione un vehículo'),
       children: [
         for (final vehicle in vehicles)
           SimpleDialogOption(
@@ -392,15 +402,17 @@ Future<void> _deleteResource(
     context: context,
     builder: (_) => AlertDialog(
       title: Text(title),
-      content: const Text('El registro pasará a estado inactivo.'),
+      content: Text('El registro pasará a estado inactivo.'),
       actions: [
-        TextButton(
+        RamisButton(
+          label: 'Cancelar',
           onPressed: () => Navigator.pop(context, false),
-          child: const Text('Cancelar'),
+          variant: RamisButtonVariant.text,
         ),
-        FilledButton(
+        RamisButton(
+          label: 'Confirmar',
           onPressed: () => Navigator.pop(context, true),
-          child: const Text('Confirmar'),
+          variant: RamisButtonVariant.primary,
         ),
       ],
     ),
@@ -426,18 +438,6 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            ElevatedButton(onPressed: onRetry, child: const Text('Reintentar')),
-          ],
-        ),
-      ),
-    );
+    return RamisErrorView(description: message, onRetry: onRetry);
   }
 }

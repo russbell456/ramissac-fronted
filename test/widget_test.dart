@@ -7,15 +7,18 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'package:sistema_ocs/main.dart';
 
 void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+    FlutterSecureStorage.setMockInitialValues({});
     await tester.pumpWidget(const ProviderScope(child: OCSApp()));
 
     // Verify that the login screen title is present.
-    expect(find.text('Iniciar Sesión OCS'), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(find.text('Bienvenido'), findsOneWidget);
+    expect(find.text('Iniciar sesión'), findsOneWidget);
   });
 }

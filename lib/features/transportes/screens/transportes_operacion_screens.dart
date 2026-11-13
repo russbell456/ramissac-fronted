@@ -1,3 +1,4 @@
+import 'package:sistema_ocs/core/design_system/ramis_design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sistema_ocs/features/transportes/models/averia_model.dart';
@@ -29,14 +30,14 @@ Widget _field(
   int maxLines = 1,
 }) {
   return Padding(
-    padding: const EdgeInsets.only(bottom: 12),
-    child: TextFormField(
+    padding: EdgeInsets.only(bottom: RamisSpacing.mediumSmall),
+    child: RamisTextField(
       controller: controller,
       maxLines: maxLines,
       keyboardType:
-          number ? const TextInputType.numberWithOptions(decimal: true) : null,
+          number ? TextInputType.numberWithOptions(decimal: true) : null,
       decoration:
-          InputDecoration(labelText: label, border: const OutlineInputBorder()),
+          InputDecoration(labelText: label, border: OutlineInputBorder()),
       validator: (value) {
         if (label.startsWith('Observaciones')) return null;
         if (value == null || value.trim().isEmpty) return 'Campo requerido';
@@ -83,7 +84,7 @@ class _InspeccionScreenState extends ConsumerState<InspeccionScreen> {
   final _observaciones = TextEditingController();
   // checklist_item_id -> resultado
   final Map<int, String> _resultados = {};
-  List<ChecklistItemModel> _items = const [];
+  List<ChecklistItemModel> _items = [];
   bool _saving = false;
 
   @override
@@ -117,7 +118,7 @@ class _InspeccionScreenState extends ConsumerState<InspeccionScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No hay items de checklist disponibles')),
+        SnackBar(content: Text('No hay items de checklist disponibles')),
       );
       return;
     }
@@ -163,31 +164,36 @@ class _InspeccionScreenState extends ConsumerState<InspeccionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.tipo.label)),
+    return RamisScaffold(
+      maxContentWidth: 1200,
+      appBar: RamisAppBar(
+        title: widget.tipo.label,
+        automaticallyImplyLeading: true,
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(RamisSpacing.medium),
           children: [
             Text('Vehiculo ${widget.vehiculoId}'),
-            const SizedBox(height: 8),
+            SizedBox(height: RamisSpacing.small),
             _field(_kilometraje, 'Kilometraje', number: true),
             _field(_combustible, 'Combustible (ej: 1/4, 1/2, lleno)'),
             if (_items.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(16),
+              Padding(
+                padding: EdgeInsets.all(RamisSpacing.medium),
                 child: Text('Cargando checklist...'),
               )
             else
               ..._items.map(
-                (item) => Card(
+                (item) => RamisCard(
+                  padding: EdgeInsets.zero,
                   child: ListTile(
                     title: Text(item.nombre),
                     subtitle: Text('${item.categoria} - ${item.criticidad}'),
                     trailing: DropdownButton<String>(
                       value: _resultados[item.id],
-                      items: const [
+                      items: [
                         DropdownMenuItem(
                           value: 'conforme',
                           child: Text('Conforme'),
@@ -217,12 +223,12 @@ class _InspeccionScreenState extends ConsumerState<InspeccionScreen> {
                 ),
               ),
             _field(_observaciones, 'Observaciones', maxLines: 3),
-            const SizedBox(height: 16),
-            FilledButton(
+            SizedBox(height: RamisSpacing.medium),
+            RamisButton(
+              isLoading: _saving,
+              label: 'Guardar inspeccion',
               onPressed: _saving ? null : _save,
-              child: _saving
-                  ? const CircularProgressIndicator()
-                  : const Text('Guardar inspeccion'),
+              variant: RamisButtonVariant.primary,
             ),
           ],
         ),
@@ -230,7 +236,6 @@ class _InspeccionScreenState extends ConsumerState<InspeccionScreen> {
     );
   }
 }
-
 
 /// Pantalla para reportar una averia.
 class AveriaFormScreen extends ConsumerStatefulWidget {
@@ -294,24 +299,28 @@ class _AveriaFormScreenState extends ConsumerState<AveriaFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Reportar averia')),
+    return RamisScaffold(
+      maxContentWidth: 1200,
+      appBar: RamisAppBar(
+        title: 'Reportar averia',
+        automaticallyImplyLeading: true,
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(RamisSpacing.medium),
           children: [
             Text('Vehiculo ${widget.vehiculoId}'),
             _field(_categoria, 'Categoria (Motor, Electrico, etc.)'),
             _field(_componente, 'Componente afectado'),
             _field(_descripcion, 'Descripcion del problema', maxLines: 3),
-            const Padding(
-              padding: EdgeInsets.only(bottom: 12),
+            Padding(
+              padding: EdgeInsets.only(bottom: RamisSpacing.mediumSmall),
               child: Text('Criticidad'),
             ),
             DropdownButtonFormField<String>(
-              value: _criticidad,
-              items: const [
+              initialValue: _criticidad,
+              items: [
                 DropdownMenuItem(value: 'baja', child: Text('Baja')),
                 DropdownMenuItem(value: 'media', child: Text('Media')),
                 DropdownMenuItem(value: 'alta', child: Text('Alta')),
@@ -320,12 +329,12 @@ class _AveriaFormScreenState extends ConsumerState<AveriaFormScreen> {
               onChanged: (value) =>
                   setState(() => _criticidad = value ?? 'media'),
             ),
-            const SizedBox(height: 20),
-            FilledButton(
+            SizedBox(height: RamisSpacing.large),
+            RamisButton(
+              isLoading: _saving,
+              label: 'Guardar averia',
               onPressed: _saving ? null : _save,
-              child: _saving
-                  ? const CircularProgressIndicator()
-                  : const Text('Guardar averia'),
+              variant: RamisButtonVariant.primary,
             ),
           ],
         ),
@@ -333,7 +342,6 @@ class _AveriaFormScreenState extends ConsumerState<AveriaFormScreen> {
     );
   }
 }
-
 
 /// Pantalla para reportar un incidente.
 class IncidenteFormScreen extends ConsumerStatefulWidget {
@@ -405,18 +413,22 @@ class _IncidenteFormScreenState extends ConsumerState<IncidenteFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Reportar incidente')),
+    return RamisScaffold(
+      maxContentWidth: 1200,
+      appBar: RamisAppBar(
+        title: 'Reportar incidente',
+        automaticallyImplyLeading: true,
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(RamisSpacing.medium),
           children: [
             Text('Vehiculo ${widget.vehiculoId}'),
-            const SizedBox(height: 8),
+            SizedBox(height: RamisSpacing.small),
             DropdownButtonFormField<String>(
-              value: _tipo,
-              items: const [
+              initialValue: _tipo,
+              items: [
                 DropdownMenuItem(value: 'colision', child: Text('Colision')),
                 DropdownMenuItem(value: 'choque', child: Text('Choque')),
                 DropdownMenuItem(
@@ -439,26 +451,26 @@ class _IncidenteFormScreenState extends ConsumerState<IncidenteFormScreen> {
             _field(_ubicacion, 'Ubicacion'),
             _field(_descripcion, 'Descripcion', maxLines: 3),
             SwitchListTile(
-              title: const Text('Hay danos'),
+              title: Text('Hay danos'),
               value: _hayDanos,
               onChanged: (v) => setState(() => _hayDanos = v),
             ),
             SwitchListTile(
-              title: const Text('Hay personas afectadas'),
+              title: Text('Hay personas afectadas'),
               value: _hayPersonas,
               onChanged: (v) => setState(() => _hayPersonas = v),
             ),
             SwitchListTile(
-              title: const Text('Generar averia asociada'),
+              title: Text('Generar averia asociada'),
               value: _generarAveria,
               onChanged: (v) => setState(() => _generarAveria = v),
             ),
-            const SizedBox(height: 20),
-            FilledButton(
+            SizedBox(height: RamisSpacing.large),
+            RamisButton(
+              isLoading: _saving,
+              label: 'Guardar incidente',
               onPressed: _saving ? null : _save,
-              child: _saving
-                  ? const CircularProgressIndicator()
-                  : const Text('Guardar incidente'),
+              variant: RamisButtonVariant.primary,
             ),
           ],
         ),
@@ -466,7 +478,6 @@ class _IncidenteFormScreenState extends ConsumerState<IncidenteFormScreen> {
     );
   }
 }
-
 
 /// Pantalla para ejecutar un mantenimiento y luego realizar la inspeccion
 /// post-mantenimiento (regreso del vehiculo a disponible).
@@ -521,7 +532,7 @@ class _EjecutarMantenimientoScreenState
                 tipo: TipoInspeccion.postMantenimiento.api,
                 kilometraje: double.parse(_km.text.trim()),
                 combustible: _combustible.text.trim(),
-                detalles: const [],
+                detalles: [],
               ),
             );
       }
@@ -550,12 +561,16 @@ class _EjecutarMantenimientoScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Ejecutar mantenimiento')),
+    return RamisScaffold(
+      maxContentWidth: 1200,
+      appBar: RamisAppBar(
+        title: 'Ejecutar mantenimiento',
+        automaticallyImplyLeading: true,
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(RamisSpacing.medium),
           children: [
             Text('Vehiculo ${widget.vehiculoId} - Mantenimiento '
                 '${widget.mantenimientoId}'),
@@ -563,20 +578,19 @@ class _EjecutarMantenimientoScreenState
             _field(_horas, 'Horas de ejecucion', number: true),
             _field(_observaciones, 'Observaciones de ejecucion', maxLines: 3),
             SwitchListTile(
-              title: const Text('Crear inspeccion post-mantenimiento'),
-              subtitle: const Text('Vuelve el vehiculo al flujo de operacion'),
+              title: Text('Crear inspeccion post-mantenimiento'),
+              subtitle: Text('Vuelve el vehiculo al flujo de operacion'),
               value: _crearInspeccionPost,
-              onChanged: (v) =>
-                  setState(() => _crearInspeccionPost = v),
+              onChanged: (v) => setState(() => _crearInspeccionPost = v),
             ),
             if (_crearInspeccionPost)
               _field(_combustible, 'Combustible tras mantenimiento'),
-            const SizedBox(height: 20),
-            FilledButton(
+            SizedBox(height: RamisSpacing.large),
+            RamisButton(
+              isLoading: _saving,
+              label: 'Ejecutar y liberar vehiculo',
               onPressed: _saving ? null : _save,
-              child: _saving
-                  ? const CircularProgressIndicator()
-                  : const Text('Ejecutar y liberar vehiculo'),
+              variant: RamisButtonVariant.primary,
             ),
           ],
         ),
@@ -584,4 +598,3 @@ class _EjecutarMantenimientoScreenState
     );
   }
 }
-

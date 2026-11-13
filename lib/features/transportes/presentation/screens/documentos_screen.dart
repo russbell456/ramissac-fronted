@@ -1,3 +1,4 @@
+import 'package:sistema_ocs/core/design_system/ramis_design_system.dart';
 import 'dart:typed_data';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -10,11 +11,11 @@ import '../../providers/jornadas_provider.dart';
 import '../../data/save_download.dart';
 import '../widgets/documento_upload_form.dart';
 
-Color colorDocumento(String estado) => switch (estado) {
-      'verde' => Colors.green,
-      'amarillo' => Colors.orange,
-      'rojo' || 'vencido' => Colors.red,
-      _ => Colors.grey,
+Color colorDocumento(BuildContext context, String estado) => switch (estado) {
+      'verde' => context.ramis.success,
+      'amarillo' => context.ramis.warning,
+      'rojo' || 'vencido' => context.ramis.error,
+      _ => context.ramis.textSecondary,
     };
 
 class MisDocumentosScreen extends ConsumerWidget {
@@ -23,12 +24,11 @@ class MisDocumentosScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) =>
       ref.watch(currentUserForTransportProvider).when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => RamisLoading(),
           error: (e, _) =>
               Center(child: Text('No se pudo identificar al conductor: $e')),
           data: (user) => user == null
-              ? const Center(
-                  child: Text('Inicie sesión para ver sus documentos.'))
+              ? Center(child: Text('Inicie sesión para ver sus documentos.'))
               : DocumentosScreen(
                   entidad: 'conductor',
                   titularId: user.id,
@@ -60,7 +60,7 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen> {
   void initState() {
     super.initState();
     _actualizarPendientes();
-    _timer = Timer.periodic(const Duration(seconds: 30), (_) async {
+    _timer = Timer.periodic(Duration(seconds: 30), (_) async {
       try {
         await _actualizarPendientes();
         await _refresh();
@@ -115,8 +115,12 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen> {
         await Navigator.push<void>(
             context,
             MaterialPageRoute(
-                builder: (_) => Scaffold(
-                    appBar: AppBar(title: const Text('Documento adjunto')),
+                builder: (_) => RamisScaffold(
+                    maxContentWidth: 1200,
+                    appBar: RamisAppBar(
+                      title: 'Documento adjunto',
+                      automaticallyImplyLeading: true,
+                    ),
                     body: Center(
                         child: InteractiveViewer(
                             child: Image.memory(Uint8List.fromList(bytes)))))));
@@ -146,30 +150,34 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen> {
                 title:
                     Text(aprobar ? 'Aprobar documento' : 'Rechazar documento'),
                 content: aprobar
-                    ? const Text(
+                    ? Text(
                         'Confirme que revisó el archivo, la categoría y el vencimiento.')
                     : Form(
                         key: form,
-                        child: TextFormField(
+                        child: RamisTextField(
                             controller: motivo,
                             maxLines: 3,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                                 labelText: 'Motivo del rechazo',
                                 helperText: 'Mínimo 10 caracteres'),
                             validator: (v) => (v ?? '').trim().length < 10
                                 ? 'Explique el motivo (mínimo 10 caracteres)'
                                 : null)),
                 actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(ctx, false),
-                      child: const Text('Volver')),
-                  FilledButton(
-                      onPressed: () {
-                        if (aprobar || form.currentState!.validate()) {
-                          Navigator.pop(ctx, true);
-                        }
-                      },
-                      child: Text(aprobar ? 'Aprobar' : 'Confirmar rechazo'))
+                  RamisButton(
+                    label: 'Volver',
+                    onPressed: () => Navigator.pop(ctx, false),
+                    variant: RamisButtonVariant.text,
+                  ),
+                  RamisButton(
+                    label: aprobar ? 'Aprobar' : 'Confirmar rechazo',
+                    onPressed: () {
+                      if (aprobar || form.currentState!.validate()) {
+                        Navigator.pop(ctx, true);
+                      }
+                    },
+                    variant: RamisButtonVariant.primary,
+                  )
                 ]));
     final razon = motivo.text.trim();
     motivo.dispose();
@@ -195,46 +203,57 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen> {
     final catalogo = widget.entidad == 'conductor'
         ? documentosConductor
         : documentosVehiculo;
-    return Scaffold(
+    return RamisScaffold(
+      maxContentWidth: 1200,
       appBar: widget.embedded
           ? null
-          : AppBar(title: Text(widget.titulo), actions: [
-              IconButton(onPressed: _refresh, icon: const Icon(Icons.refresh))
-            ]),
+          : RamisAppBar(
+              title: widget.titulo,
+              automaticallyImplyLeading: true,
+              actions: [
+                IconButton(onPressed: _refresh, icon: Icon(Icons.refresh))
+              ],
+            ),
       floatingActionButton: FloatingActionButton.extended(
           onPressed: _ocupado ? null : _subir,
-          icon: const Icon(Icons.upload_file),
-          label: const Text('Regularizar / Subir Documento')),
+          icon: Icon(Icons.upload_file),
+          label: Text('Subir documento')),
       body: documentos.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(
-              child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    Text('No se pudieron cargar los documentos: $e'),
-                    TextButton(
-                        onPressed: _refresh, child: const Text('Reintentar')),
-                    OutlinedButton(
-                        onPressed: () => _subir(),
-                        child: const Text('Subir documento sin conexión'))
-                  ]))),
+          loading: () => RamisLoading(),
+          error: (e, _) => ListView(children: [
+                RamisErrorView(
+                  description: 'No se pudieron cargar los documentos: $e',
+                  onRetry: () => ref.invalidate(documentosProvider(
+                      (entidad: widget.entidad, id: widget.titularId))),
+                ),
+                Padding(
+                    padding: RamisSpacing.screenPadding,
+                    child: RamisButton(
+                      label: 'Subir documento sin conexión',
+                      onPressed: () => _subir(),
+                      variant: RamisButtonVariant.outlined,
+                    )),
+              ]),
           data: (items) => RefreshIndicator(
               onRefresh: _refresh,
               child: ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
+                  padding: EdgeInsets.fromLTRB(RamisSpacing.medium,
+                      RamisSpacing.mediumSmall, RamisSpacing.medium, 110),
                   children: [
                     if (_pendientes > 0)
-                      Card(
+                      RamisCard(
+                          padding: EdgeInsets.zero,
                           child: Padding(
-                              padding: const EdgeInsets.all(12),
+                              padding: EdgeInsets.all(RamisSpacing.mediumSmall),
                               child: Text(
                                   '$_pendientes documento(s) guardado(s) · Pendiente de sincronización'))),
                     if (_mensaje != null)
-                      Card(
+                      RamisCard(
+                          padding: EdgeInsets.zero,
                           child: Padding(
-                              padding: const EdgeInsets.all(12),
+                              padding: EdgeInsets.all(RamisSpacing.mediumSmall),
                               child: Text(_mensaje!))),
-                    if (_ocupado) const LinearProgressIndicator(),
+                    if (_ocupado) LinearProgressIndicator(),
                     for (final entry in catalogo.entries)
                       _card(
                           entry.key,
@@ -243,71 +262,77 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen> {
                               DocumentoTransporte.fromJson(
                                   {'tipo': entry.key})),
                     ExpansionTile(
-                        title: const Text('Historial de versiones'),
+                        title: Text('Historial de versiones'),
                         children: [
-                          TextButton(
-                              onPressed: () async {
-                                try {
-                                  final rows = await ref
-                                      .read(transporteRepositoryProvider)
-                                      .historialDocumentos(
-                                          widget.entidad, widget.titularId);
-                                  if (!context.mounted) return;
-                                  await Navigator.push<void>(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (_) => Scaffold(
-                                              appBar: AppBar(
-                                                  title: const Text(
-                                                      'Historial documental')),
-                                              body: ListView(children: [
-                                                for (final row in rows)
-                                                  ListTile(
-                                                      title: Text(
-                                                          '${catalogo[row['tipo']] ?? row['tipo']} · Versión ${row['version']}'),
-                                                      subtitle: Text(
-                                                          '${row['estado']} · ${row['archivado'] == true ? 'Archivado' : 'Actual'}'),
-                                                      trailing:
-                                                          row['archivo_url'] ==
-                                                                  null
-                                                              ? null
-                                                              : const Icon(Icons
-                                                                  .open_in_new),
-                                                      onTap: row['archivo_url'] ==
-                                                              null
-                                                          ? null
-                                                          : () => _ver(
-                                                              row['archivo_url']
-                                                                  as String))
-                                              ]))));
-                                } catch (e) {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text('$e')));
-                                  }
+                          RamisButton(
+                            label: 'Consultar historial',
+                            onPressed: () async {
+                              try {
+                                final rows = await ref
+                                    .read(transporteRepositoryProvider)
+                                    .historialDocumentos(
+                                        widget.entidad, widget.titularId);
+                                if (!context.mounted) return;
+                                await Navigator.push<void>(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (_) => RamisScaffold(
+                                            maxContentWidth: 1200,
+                                            appBar: RamisAppBar(
+                                              title: 'Historial documental',
+                                              automaticallyImplyLeading: true,
+                                            ),
+                                            body: ListView(children: [
+                                              for (final row in rows)
+                                                ListTile(
+                                                    title: Text(
+                                                        '${catalogo[row['tipo']] ?? row['tipo']} · Versión ${row['version']}'),
+                                                    subtitle: Text(
+                                                        '${row['estado']} · ${row['archivado'] == true ? 'Archivado' : 'Actual'}'),
+                                                    trailing:
+                                                        row['archivo_url'] ==
+                                                                null
+                                                            ? null
+                                                            : Icon(Icons
+                                                                .open_in_new),
+                                                    onTap: row['archivo_url'] ==
+                                                            null
+                                                        ? null
+                                                        : () => _ver(
+                                                            row['archivo_url']
+                                                                as String))
+                                            ]))));
+                              } catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('$e')));
                                 }
-                              },
-                              child: const Text('Consultar historial')),
+                              }
+                            },
+                            variant: RamisButtonVariant.text,
+                          ),
                         ]),
                   ]))),
     );
   }
 
-  Widget _card(String tipo, String titulo, DocumentoTransporte d) => Card(
+  Widget _card(String tipo, String titulo, DocumentoTransporte d) => RamisCard(
+      margin: const EdgeInsets.only(bottom: RamisSpacing.mediumSmall),
+      padding: EdgeInsets.zero,
       child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(RamisSpacing.medium),
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(titulo,
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
+            Text(titulo, style: Theme.of(context).textTheme.titleMedium),
+            SizedBox(height: RamisSpacing.small),
             Wrap(spacing: 8, children: [
-              Chip(
-                  avatar: Icon(Icons.circle,
-                      size: 16, color: colorDocumento(d.semaforo)),
-                  label: Text(d.semaforo.toUpperCase())),
-              Chip(label: Text('Estado: ${d.estado}'))
+              RamisStatusChip(
+                label: d.semaforo.toUpperCase(),
+                foregroundColor: colorDocumento(context, d.semaforo),
+              ),
+              RamisStatusChip(
+                label: 'Estado: ${d.estado}',
+              )
             ]),
             if (tipo == 'licencia')
               Text('Categoría: ${d.categoria ?? 'Pendiente'}'),
@@ -318,27 +343,35 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen> {
                   : 'Días restantes: ${d.dias}'),
             if (d.motivo != null)
               Text('Motivo: ${d.motivo}',
-                  style: const TextStyle(color: Colors.red)),
+                  style: TextStyle(color: context.ramis.error)),
             Wrap(spacing: 8, runSpacing: 6, children: [
               if (d.archivo != null)
-                TextButton.icon(
-                    onPressed: _ocupado ? null : () => _ver(d.archivo!),
-                    icon: const Icon(Icons.visibility),
-                    label: const Text('Ver archivo')),
-              OutlinedButton(
-                  onPressed: _ocupado ? null : () => _subir(tipo),
-                  child: Text(d.archivo == null
-                      ? 'Subir documento'
-                      : 'Actualizar documento')),
+                RamisButton(
+                  label: 'Ver archivo',
+                  onPressed: _ocupado ? null : () => _ver(d.archivo!),
+                  variant: RamisButtonVariant.text,
+                  icon: Icons.visibility,
+                ),
+              RamisButton(
+                label: d.archivo == null
+                    ? 'Subir documento'
+                    : 'Actualizar documento',
+                onPressed: _ocupado ? null : () => _subir(tipo),
+                variant: RamisButtonVariant.outlined,
+              ),
               if (widget.administrar &&
                   d.id != null &&
                   d.estado == 'pendiente') ...[
-                FilledButton(
-                    onPressed: _ocupado ? null : () => _revisar(d, true),
-                    child: const Text('Aprobar')),
-                TextButton(
-                    onPressed: _ocupado ? null : () => _revisar(d, false),
-                    child: const Text('Rechazar')),
+                RamisButton(
+                  label: 'Aprobar',
+                  onPressed: _ocupado ? null : () => _revisar(d, true),
+                  variant: RamisButtonVariant.primary,
+                ),
+                RamisButton(
+                  label: 'Rechazar',
+                  onPressed: _ocupado ? null : () => _revisar(d, false),
+                  variant: RamisButtonVariant.text,
+                ),
               ],
             ]),
           ])));

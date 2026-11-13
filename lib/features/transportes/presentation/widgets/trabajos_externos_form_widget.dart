@@ -1,5 +1,5 @@
+import 'package:sistema_ocs/core/design_system/ramis_design_system.dart';
 import 'package:flutter/material.dart';
-import 'package:sistema_ocs/core/theme/app_theme.dart';
 import 'package:sistema_ocs/features/transportes/domain/entities/jornada_transporte.dart';
 
 class TrabajosExternosFormWidget extends StatefulWidget {
@@ -23,9 +23,9 @@ class _TrabajosExternosFormWidgetState
   }
 
   @override
-  Widget build(BuildContext context) => TextFormField(
+  Widget build(BuildContext context) => RamisTextField(
         controller: _controller,
-        decoration: AppTheme.inputDecoration.copyWith(
+        decoration: InputDecoration(
           labelText: 'TRABAJOS',
           helperText: 'Describir los trabajos realizados con el vehículo',
           helperMaxLines: 2,

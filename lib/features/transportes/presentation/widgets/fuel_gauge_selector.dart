@@ -1,5 +1,5 @@
+import 'package:sistema_ocs/core/design_system/ramis_design_system.dart';
 import 'package:flutter/material.dart';
-import 'package:sistema_ocs/core/theme/app_theme.dart';
 
 /// Widget que imita un medidor de combustible con 5 niveles.
 /// Devuelve el valor entero [0, 25, 50, 75, 100].
@@ -16,11 +16,11 @@ class FuelGaugeSelector extends StatelessWidget {
   static const _labels = ['E', '1/4', '1/2', '3/4', 'F'];
   static const _values = [0, 25, 50, 75, 100];
 
-  Color _colorForValue(int v) {
-    if (v <= 25) return AppTheme.error;
-    if (v <= 50) return Colors.orange;
-    if (v <= 75) return Colors.yellow.shade700;
-    return AppTheme.secondary;
+  Color _colorForValue(BuildContext context, int v) {
+    if (v <= 25) return context.ramis.error;
+    if (v <= 50) return context.ramis.warning;
+    if (v <= 75) return context.ramis.warning;
+    return Theme.of(context).colorScheme.primary;
   }
 
   @override
@@ -29,17 +29,20 @@ class FuelGaugeSelector extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Nivel de Combustible',
-            style: AppTheme.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium!
+                .copyWith(fontWeight: FontWeight.bold)),
+        SizedBox(height: RamisSpacing.small),
         Material(
-          color: AppTheme.surface,
+          color: Theme.of(context).colorScheme.surface,
           shape: RoundedRectangleBorder(
-            side: const BorderSide(color: AppTheme.border),
-            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: context.ramis.border),
+            borderRadius: RamisRadius.medium,
           ),
           clipBehavior: Clip.antiAlias,
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(RamisSpacing.mediumSmall),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -47,48 +50,51 @@ class FuelGaugeSelector extends StatelessWidget {
                   children: [
                     Icon(Icons.local_gas_station,
                         color: value == null
-                            ? AppTheme.textDisabled
-                            : _colorForValue(value!),
+                            ? Theme.of(context).colorScheme.onSurfaceVariant
+                            : _colorForValue(context, value!),
                         size: 32),
-                    const Spacer(),
+                    Spacer(),
                     Text(
                       value == null ? 'Seleccione' : '$value%',
-                      style: AppTheme.bodySmall.copyWith(
-                        color: value == null
-                            ? AppTheme.textSecondary
-                            : _colorForValue(value!),
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                            color: value == null
+                                ? context.ramis.textSecondary
+                                : _colorForValue(context, value!),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: RamisSpacing.small),
                 Row(
                   children: List.generate(_values.length, (i) {
                     final isSelected = _values[i] == value;
-                    final segColor = _colorForValue(_values[i]);
+                    final segColor = _colorForValue(context, _values[i]);
                     return Expanded(
                       child: Padding(
                         padding: EdgeInsets.only(
-                            right: i == _values.length - 1 ? 0 : 4),
+                            right: i == _values.length - 1
+                                ? 0
+                                : RamisSpacing.xSmall),
                         child: Semantics(
                           button: true,
                           label: '${_values[i]}% de combustible',
                           selected: isSelected,
                           child: InkWell(
                             onTap: () => onChanged(_values[i]),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: RamisRadius.small,
                             child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              height: 44,
+                              duration: Duration(milliseconds: 200),
+                              height: 48,
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? segColor
-                                    : segColor.withAlpha(40),
-                                borderRadius: BorderRadius.circular(8),
+                                    ? segColor.withAlpha(45)
+                                    : Theme.of(context).colorScheme.surface,
+                                borderRadius: RamisRadius.small,
                                 border: Border.all(
-                                  color:
-                                      isSelected ? segColor : AppTheme.border,
+                                  color: isSelected
+                                      ? segColor
+                                      : context.ramis.border,
                                   width: isSelected ? 2 : 1,
                                 ),
                               ),
@@ -97,12 +103,15 @@ class FuelGaugeSelector extends StatelessWidget {
                                   fit: BoxFit.scaleDown,
                                   child: Text(
                                     _labels[i],
-                                    style: AppTheme.bodySmall.copyWith(
-                                      color: isSelected
-                                          ? Colors.white
-                                          : AppTheme.textSecondary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall!
+                                        .copyWith(
+                                          color: isSelected
+                                              ? segColor
+                                              : context.ramis.textSecondary,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                   ),
                                 ),
                               ),

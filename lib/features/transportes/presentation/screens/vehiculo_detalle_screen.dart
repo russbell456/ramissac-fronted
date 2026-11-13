@@ -1,3 +1,4 @@
+import 'package:sistema_ocs/core/design_system/ramis_design_system.dart';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart'
@@ -30,19 +31,18 @@ class _VehiculoDetalleScreenState extends ConsumerState<VehiculoDetalleScreen> {
         useSafeArea: true,
         builder: (ctx) => StatefulBuilder(
             builder: (ctx, update) => Padding(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(RamisSpacing.large),
                 child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text('Ficha Técnica PDF',
-                          style: TextStyle(
-                              fontSize: 22, fontWeight: FontWeight.bold)),
+                      Text('Ficha Técnica PDF',
+                          style: Theme.of(context).textTheme.headlineSmall),
                       DropdownButtonFormField<String>(
                           initialValue: estado,
                           decoration:
-                              const InputDecoration(labelText: 'Observaciones'),
-                          items: const [
+                              InputDecoration(labelText: 'Observaciones'),
+                          items: [
                             DropdownMenuItem(
                                 value: 'pendientes',
                                 child: Text('Solo pendientes')),
@@ -51,29 +51,35 @@ class _VehiculoDetalleScreenState extends ConsumerState<VehiculoDetalleScreen> {
                                 child: Text('Historial completo'))
                           ],
                           onChanged: (v) => update(() => estado = v!)),
-                      TextButton.icon(
-                          icon: const Icon(Icons.date_range),
-                          label: Text(rango == null
-                              ? 'Filtrar por fechas (opcional)'
-                              : '${rango!.start.day}/${rango!.start.month}/${rango!.start.year} – ${rango!.end.day}/${rango!.end.month}/${rango!.end.year}'),
-                          onPressed: () async {
-                            final result = await showDateRangePicker(
-                                context: ctx,
-                                firstDate: DateTime(2000),
-                                lastDate: DateTime.now(),
-                                initialDateRange: rango);
-                            if (result != null && ctx.mounted) {
-                              update(() => rango = result);
-                            }
-                          }),
+                      RamisButton(
+                        label: rango == null
+                            ? 'Filtrar por fechas (opcional)'
+                            : '${rango!.start.day}/${rango!.start.month}/${rango!.start.year} – ${rango!.end.day}/${rango!.end.month}/${rango!.end.year}',
+                        onPressed: () async {
+                          final result = await showDateRangePicker(
+                              context: ctx,
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime.now(),
+                              initialDateRange: rango);
+                          if (result != null && ctx.mounted) {
+                            update(() => rango = result);
+                          }
+                        },
+                        variant: RamisButtonVariant.text,
+                        icon: Icons.date_range,
+                      ),
                       if (rango != null)
-                        TextButton(
-                            onPressed: () => update(() => rango = null),
-                            child: const Text('Quitar fechas')),
-                      const SizedBox(height: 16),
-                      FilledButton(
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text('Descargar PDF')),
+                        RamisButton(
+                          label: 'Quitar fechas',
+                          onPressed: () => update(() => rango = null),
+                          variant: RamisButtonVariant.text,
+                        ),
+                      SizedBox(height: RamisSpacing.medium),
+                      RamisButton(
+                        label: 'Descargar PDF',
+                        onPressed: () => Navigator.pop(ctx, true),
+                        variant: RamisButtonVariant.primary,
+                      ),
                     ]))));
     if (confirmar != true || !mounted) return;
     setState(() => _descargando = true);
@@ -98,8 +104,8 @@ class _VehiculoDetalleScreenState extends ConsumerState<VehiculoDetalleScreen> {
         await writeDownloadedFile(path, bytes);
       }
       if (path != null && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Ficha técnica descargada.')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Ficha técnica descargada.')));
       }
     } catch (e) {
       if (mounted) {
@@ -112,36 +118,50 @@ class _VehiculoDetalleScreenState extends ConsumerState<VehiculoDetalleScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(title: Text('Vehículo ${widget.vehiculo['placa']}')),
+  Widget build(BuildContext context) => RamisScaffold(
+      maxContentWidth: 1200,
+      appBar: RamisAppBar(
+        title: 'Vehículo ${widget.vehiculo['placa']}',
+        automaticallyImplyLeading: true,
+      ),
       body: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            padding: EdgeInsets.fromLTRB(
+                RamisSpacing.medium,
+                RamisSpacing.mediumSmall,
+                RamisSpacing.medium,
+                RamisSpacing.small),
             child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
                       '${widget.vehiculo['marca']} ${widget.vehiculo['modelo']}',
-                      style: const TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.bold)),
-                  Wrap(spacing: 8, children: [
-                    Chip(
-                        avatar: Icon(Icons.circle,
-                            size: 16,
-                            color: colorDocumento(
-                                '${widget.vehiculo['estado_semaforo'] ?? 'verde'}')),
-                        label: Text(
-                            'Operativo: ${widget.vehiculo['estado_semaforo'] ?? 'verde'}')),
-                    Chip(
-                        label:
-                            Text('${widget.vehiculo['kilometraje_actual']} km'))
-                  ]),
-                  FilledButton.icon(
-                      onPressed: _descargando ? null : _descargar,
-                      icon: const Icon(Icons.picture_as_pdf),
-                      label: Text(_descargando
-                          ? 'Descargando…'
-                          : 'Descargar Ficha Técnica PDF')),
+                      style: Theme.of(context).textTheme.titleLarge),
+                  SizedBox(height: RamisSpacing.small),
+                  Wrap(
+                      spacing: RamisSpacing.small,
+                      runSpacing: RamisSpacing.small,
+                      children: [
+                        RamisStatusChip(
+                          label:
+                              'Operativo: ${widget.vehiculo['estado_semaforo'] ?? 'verde'}',
+                          foregroundColor: colorDocumento(context,
+                              '${widget.vehiculo['estado_semaforo'] ?? 'verde'}'),
+                        ),
+                        RamisStatusChip(
+                          label: '${widget.vehiculo['kilometraje_actual']} km',
+                        )
+                      ]),
+                  SizedBox(height: RamisSpacing.mediumSmall),
+                  RamisButton(
+                    isLoading: _descargando,
+                    label: _descargando
+                        ? 'Descargando…'
+                        : 'Descargar Ficha Técnica PDF',
+                    onPressed: _descargando ? null : _descargar,
+                    variant: RamisButtonVariant.primary,
+                    icon: Icons.picture_as_pdf,
+                  ),
                 ])),
         Expanded(
             child: DocumentosScreen(
@@ -157,7 +177,7 @@ Future<bool?> mostrarAltaVehiculo(BuildContext context) =>
         context: context,
         isScrollControlled: true,
         useSafeArea: true,
-        builder: (_) => const AltaVehiculoForm());
+        builder: (_) => AltaVehiculoForm());
 
 class AltaVehiculoForm extends ConsumerStatefulWidget {
   const AltaVehiculoForm({super.key});
@@ -213,39 +233,40 @@ class _AltaVehiculoFormState extends ConsumerState<AltaVehiculoForm> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text('Alta Rápida de Vehículo',
-                        style: TextStyle(
-                            fontSize: 22, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 20),
-                    TextFormField(
+                    Text('Alta Rápida de Vehículo',
+                        style: Theme.of(context).textTheme.headlineSmall),
+                    SizedBox(height: RamisSpacing.large),
+                    RamisTextField(
                         controller: _placa,
                         textCapitalization: TextCapitalization.characters,
                         maxLength: 20,
-                        decoration: const InputDecoration(labelText: 'Placa'),
+                        decoration: InputDecoration(labelText: 'Placa'),
                         validator: (v) => (v ?? '').trim().isEmpty
                             ? 'Ingrese la placa'
                             : null),
-                    TextFormField(
+                    RamisTextField(
                         controller: _modelo,
                         decoration:
-                            const InputDecoration(labelText: 'Nombre / Modelo'),
+                            InputDecoration(labelText: 'Nombre / Modelo'),
                         validator: (v) => (v ?? '').trim().isEmpty
                             ? 'Ingrese el nombre o modelo'
                             : null),
-                    const SizedBox(height: 16),
-                    TextFormField(
+                    SizedBox(height: RamisSpacing.medium),
+                    RamisTextField(
                         controller: _marca,
-                        decoration: const InputDecoration(
-                            labelText: 'Marca (opcional)')),
+                        decoration:
+                            InputDecoration(labelText: 'Marca (opcional)')),
                     if (_error != null)
                       Padding(
-                          padding: const EdgeInsets.only(top: 12),
+                          padding:
+                              EdgeInsets.only(top: RamisSpacing.mediumSmall),
                           child: Text(_error!,
-                              style: const TextStyle(color: Colors.red))),
-                    const SizedBox(height: 24),
-                    FilledButton(
-                        onPressed: _saving ? null : _save,
-                        child: Text(
-                            _saving ? 'Guardando…' : 'Registrar vehículo')),
+                              style: TextStyle(color: context.ramis.error))),
+                    SizedBox(height: RamisSpacing.xLarge),
+                    RamisButton(
+                      label: _saving ? 'Guardando…' : 'Registrar vehículo',
+                      onPressed: _saving ? null : _save,
+                      variant: RamisButtonVariant.primary,
+                    ),
                   ]))));
 }

@@ -1,3 +1,4 @@
+import 'package:sistema_ocs/core/design_system/ramis_design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/documento_transporte.dart';
@@ -37,33 +38,33 @@ class _ConductoresScreenState extends ConsumerState<ConductoresScreen> {
               administrar: true,
               titulo: 'Documentos · ${c['nombre']} ${c['apellidos']}')));
   @override
-  Widget build(BuildContext context) => Scaffold(
-      appBar: widget.embedded ? null : AppBar(title: const Text('Conductores')),
+  Widget build(BuildContext context) => RamisScaffold(
+      maxContentWidth: 1200,
+      appBar: widget.embedded
+          ? null
+          : RamisAppBar(
+              title: 'Conductores',
+              automaticallyImplyLeading: true,
+            ),
       floatingActionButton: FloatingActionButton.extended(
           onPressed: _formulario,
-          icon: const Icon(Icons.person_add),
-          label: const Text('Alta Rápida de Conductor')),
+          icon: Icon(Icons.person_add),
+          label: Text('Nuevo conductor')),
       body: Column(children: [
         Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
+            padding: EdgeInsets.all(RamisSpacing.medium),
+            child: RamisTextField(
                 onChanged: (v) => setState(() => _buscar = v.toLowerCase()),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                     prefixIcon: Icon(Icons.search),
                     labelText: 'Buscar por DNI o nombre'))),
         Expanded(
             child: ref.watch(conductoresV3Provider).when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(
-                    child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child:
-                            Column(mainAxisSize: MainAxisSize.min, children: [
-                          Text('No se pudieron cargar los conductores: $e'),
-                          TextButton(
-                              onPressed: _refresh,
-                              child: const Text('Reintentar'))
-                        ]))),
+                loading: () => RamisLoading(),
+                error: (e, _) => RamisErrorView(
+                      description: 'No se pudieron cargar los conductores: $e',
+                      onRetry: () => ref.invalidate(conductoresV3Provider),
+                    ),
                 data: (lista) {
                   final rows = lista
                       .where((c) =>
@@ -74,29 +75,33 @@ class _ConductoresScreenState extends ConsumerState<ConductoresScreen> {
                   return RefreshIndicator(
                       onRefresh: _refresh,
                       child: ListView(
-                          padding: const EdgeInsets.fromLTRB(12, 0, 12, 110),
+                          padding: EdgeInsets.fromLTRB(RamisSpacing.mediumSmall,
+                              0, RamisSpacing.mediumSmall, 110),
                           children: [
                             if (rows.isEmpty)
-                              const Padding(
-                                  padding: EdgeInsets.all(24),
+                              Padding(
+                                  padding: EdgeInsets.all(RamisSpacing.xLarge),
                                   child:
                                       Text('No hay conductores para mostrar.')),
                             for (final c in rows)
-                              Card(
+                              RamisCard(
+                                  padding: EdgeInsets.zero,
                                   child: Padding(
-                                      padding: const EdgeInsets.all(16),
+                                      padding:
+                                          EdgeInsets.all(RamisSpacing.medium),
                                       child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                                 '${c['nombre']} ${c['apellidos']}',
-                                                style: const TextStyle(
+                                                style: TextStyle(
                                                     fontWeight: FontWeight.bold,
                                                     fontSize: 18)),
                                             Text('DNI: ${c['dni']}'),
                                             Text('Correo: ${c['email']}'),
-                                            const SizedBox(height: 8),
+                                            SizedBox(
+                                                height: RamisSpacing.small),
                                             Wrap(
                                                 spacing: 6,
                                                 runSpacing: 4,
@@ -121,32 +126,30 @@ class _ConductoresScreenState extends ConsumerState<ConductoresScreen> {
                                                               doc['estado'] ??
                                                               'pendiente')
                                                           as String;
-                                                      return Chip(
-                                                          avatar: Icon(
-                                                              Icons.circle,
-                                                              size: 14,
-                                                              color:
-                                                                  colorDocumento(
-                                                                      color)),
-                                                          label: Text(
-                                                              '${tipo == 'licencia' ? 'Licencia' : tipo == 'emo' ? 'EMO' : 'Pase Minero'}: $color'));
+                                                      return RamisStatusChip(
+                                                        label:
+                                                            '${tipo == 'licencia' ? 'Licencia' : tipo == 'emo' ? 'EMO' : 'Pase Minero'}: $color',
+                                                        foregroundColor:
+                                                            colorDocumento(
+                                                                context, color),
+                                                      );
                                                     })
                                                 ]),
                                             Wrap(spacing: 8, children: [
-                                              FilledButton.tonalIcon(
-                                                  onPressed: () =>
-                                                      _documentos(c),
-                                                  icon: const Icon(
-                                                      Icons.fact_check),
-                                                  label: const Text(
-                                                      'Revisar Documentos')),
-                                              OutlinedButton.icon(
-                                                  onPressed: () =>
-                                                      _formulario(c),
-                                                  icon: const Icon(
-                                                      Icons.manage_accounts),
-                                                  label: const Text(
-                                                      'Configurar Acceso')),
+                                              RamisButton(
+                                                label: 'Revisar Documentos',
+                                                onPressed: () => _documentos(c),
+                                                variant:
+                                                    RamisButtonVariant.primary,
+                                                icon: Icons.fact_check,
+                                              ),
+                                              RamisButton(
+                                                label: 'Configurar Acceso',
+                                                onPressed: () => _formulario(c),
+                                                variant:
+                                                    RamisButtonVariant.outlined,
+                                                icon: Icons.manage_accounts,
+                                              ),
                                             ]),
                                           ]))),
                           ]));
@@ -222,31 +225,28 @@ class _ConductorFormState extends ConsumerState<ConductorForm> {
                         acceso
                             ? 'Configurar Acceso'
                             : 'Alta Rápida de Conductor',
-                        style: const TextStyle(
-                            fontSize: 22, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 20),
+                        style: Theme.of(context).textTheme.headlineSmall),
+                    SizedBox(height: RamisSpacing.large),
                     if (!acceso) ...[
-                      TextFormField(
+                      RamisTextField(
                           controller: _dni,
                           maxLength: 8,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(labelText: 'DNI'),
+                          decoration: InputDecoration(labelText: 'DNI'),
                           validator: (v) => RegExp(r'^\d{8}$').hasMatch(v ?? '')
                               ? null
                               : 'Ingrese 8 dígitos'),
-                      TextFormField(
+                      RamisTextField(
                           controller: _nombre,
-                          decoration:
-                              const InputDecoration(labelText: 'Nombres'),
+                          decoration: InputDecoration(labelText: 'Nombres'),
                           textCapitalization: TextCapitalization.words,
                           validator: (v) => (v ?? '').trim().length < 2
                               ? 'Ingrese los nombres'
                               : null),
-                      const SizedBox(height: 16),
-                      TextFormField(
+                      SizedBox(height: RamisSpacing.medium),
+                      RamisTextField(
                           controller: _apellidos,
-                          decoration:
-                              const InputDecoration(labelText: 'Apellidos'),
+                          decoration: InputDecoration(labelText: 'Apellidos'),
                           textCapitalization: TextCapitalization.words,
                           validator: (v) => (v ?? '').trim().length < 2
                               ? 'Ingrese los apellidos'
@@ -254,18 +254,18 @@ class _ConductorFormState extends ConsumerState<ConductorForm> {
                     ] else ...[
                       Text(
                           '${widget.conductor!['nombre']} ${widget.conductor!['apellidos']}'),
-                      TextFormField(
+                      RamisTextField(
                           controller: _email,
                           keyboardType: TextInputType.emailAddress,
-                          decoration: const InputDecoration(
-                              labelText: 'Correo electrónico'),
+                          decoration:
+                              InputDecoration(labelText: 'Correo electrónico'),
                           validator: (v) =>
                               RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
                                       .hasMatch((v ?? '').trim())
                                   ? null
                                   : 'Ingrese un correo válido'),
-                      const SizedBox(height: 16),
-                      TextFormField(
+                      SizedBox(height: RamisSpacing.medium),
+                      RamisTextField(
                           controller: _password,
                           obscureText: !_visible,
                           maxLength: 128,
@@ -285,13 +285,16 @@ class _ConductorFormState extends ConsumerState<ConductorForm> {
                     ],
                     if (_error != null)
                       Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding: EdgeInsets.symmetric(
+                              vertical: RamisSpacing.mediumSmall),
                           child: Text(_error!,
                               style: TextStyle(
                                   color: Theme.of(context).colorScheme.error))),
-                    const SizedBox(height: 24),
-                    FilledButton(
-                        onPressed: _guardando ? null : _guardar,
-                        child: Text(_guardando ? 'Guardando…' : 'Guardar')),
+                    SizedBox(height: RamisSpacing.xLarge),
+                    RamisButton(
+                      label: _guardando ? 'Guardando…' : 'Guardar',
+                      onPressed: _guardando ? null : _guardar,
+                      variant: RamisButtonVariant.primary,
+                    ),
                   ]))));
 }

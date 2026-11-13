@@ -1,7 +1,7 @@
+import 'package:sistema_ocs/core/design_system/ramis_design_system.dart';
 import '../widgets/vehiculo_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sistema_ocs/core/theme/app_theme.dart';
 import 'package:sistema_ocs/features/transportes/domain/entities/jornada_transporte.dart';
 import 'package:sistema_ocs/features/transportes/domain/failures/transport_failure.dart';
 import 'package:sistema_ocs/features/transportes/providers/jornadas_provider.dart';
@@ -36,22 +36,26 @@ class _AsignacionJornadaScreenState
     final vehiculosAsync = ref.watch(vehiculosDisponiblesProvider);
     final trabajadoresAsync = ref.watch(trabajadoresProvider);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Asignar Jornada')),
+    return RamisScaffold(
+      maxContentWidth: 1200,
+      appBar: RamisAppBar(
+        title: 'Asignar Jornada',
+        automaticallyImplyLeading: true,
+      ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppTheme.spacingL),
+        padding: EdgeInsets.all(RamisSpacing.medium),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              AppCard(
+              RamisCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Nueva Jornada de Transporte',
-                        style: AppTheme.titleLarge),
-                    const SizedBox(height: AppTheme.spacingXL),
+                        style: Theme.of(context).textTheme.titleLarge!),
+                    SizedBox(height: RamisSpacing.xLarge),
 
                     // ── Vehículo ──
                     vehiculosAsync.when(
@@ -62,23 +66,25 @@ class _AsignacionJornadaScreenState
                             onChanged: (v) => setState(
                                 () => _selectedVehiculoId = v['id'] as int));
                       },
-                      loading: () => const LinearProgressIndicator(),
+                      loading: () => LinearProgressIndicator(),
                       error: (e, _) => Text(
                         'Error al cargar vehículos: $e',
-                        style:
-                            AppTheme.bodySmall.copyWith(color: AppTheme.error),
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall!
+                            .copyWith(color: context.ramis.error),
                       ),
                     ),
 
-                    const SizedBox(height: AppTheme.spacingL),
+                    SizedBox(height: RamisSpacing.medium),
 
                     // ── Conductor ──
                     trabajadoresAsync.when(
                       data: (trabajadores) {
                         return DropdownButtonFormField<int>(
-                          decoration: AppTheme.inputDecoration.copyWith(
+                          decoration: InputDecoration(
                             labelText: 'Conductor',
-                            prefixIcon: const Icon(Icons.person_outline),
+                            prefixIcon: Icon(Icons.person_outline),
                           ),
                           items: trabajadores
                               .map((t) => DropdownMenuItem<int>(
@@ -95,34 +101,27 @@ class _AsignacionJornadaScreenState
                               val == null ? 'Seleccione un conductor' : null,
                         );
                       },
-                      loading: () => const LinearProgressIndicator(),
+                      loading: () => LinearProgressIndicator(),
                       error: (e, _) => Text(
                         'Error al cargar trabajadores: $e',
-                        style:
-                            AppTheme.bodySmall.copyWith(color: AppTheme.error),
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall!
+                            .copyWith(color: context.ramis.error),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: AppTheme.spacingXXL),
-              SizedBox(
-                height: 52,
-                child: ElevatedButton.icon(
+              SizedBox(height: RamisSpacing.xxLarge),
+              ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 52),
+                child: RamisButton(
+                  isLoading: _isSubmitting,
+                  label: _isSubmitting ? 'Asignando...' : 'Crear Jornada',
                   onPressed: _isSubmitting ? null : _submit,
-                  icon: _isSubmitting
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppTheme.textOnPrimary,
-                          ),
-                        )
-                      : const Icon(Icons.check),
-                  label: Text(
-                    _isSubmitting ? 'Asignando...' : 'Crear Jornada',
-                  ),
+                  variant: RamisButtonVariant.primary,
+                  icon: Icons.check,
                 ),
               ),
             ],
@@ -137,10 +136,10 @@ class _AsignacionJornadaScreenState
 
     if (_selectedVehiculoId == null || _selectedConductorId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content:
               Text('Por favor seleccione un vehículo y un conductor válidos.'),
-          backgroundColor: AppTheme.error,
+          backgroundColor: context.ramis.error,
         ),
       );
       return;
@@ -156,9 +155,9 @@ class _AsignacionJornadaScreenState
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Jornada asignada exitosamente'),
-          backgroundColor: AppTheme.secondary,
+          backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
       Navigator.pop(context);
@@ -167,7 +166,7 @@ class _AsignacionJornadaScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.message),
-          backgroundColor: AppTheme.error,
+          backgroundColor: context.ramis.error,
         ),
       );
     } finally {

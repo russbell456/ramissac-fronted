@@ -1,7 +1,7 @@
+import 'package:sistema_ocs/core/design_system/ramis_design_system.dart';
 import 'observacion_fields.dart';
 import 'odometro_confirm.dart';
 import 'package:flutter/material.dart';
-import 'package:sistema_ocs/core/theme/app_theme.dart';
 import 'package:sistema_ocs/features/transportes/domain/entities/jornada_transporte.dart';
 
 class ChecklistForm extends StatefulWidget {
@@ -56,9 +56,9 @@ class _ChecklistFormState extends State<ChecklistForm> {
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: AppTheme.spacingL,
-        right: AppTheme.spacingL,
-        top: AppTheme.spacingL,
+        left: RamisSpacing.medium,
+        right: RamisSpacing.medium,
+        top: RamisSpacing.medium,
       ),
       child: Form(
         key: _formKey,
@@ -72,10 +72,10 @@ class _ChecklistFormState extends State<ChecklistForm> {
                 child: Container(
                   width: 40,
                   height: 4,
-                  margin: const EdgeInsets.only(bottom: AppTheme.spacingL),
+                  margin: EdgeInsets.only(bottom: RamisSpacing.medium),
                   decoration: BoxDecoration(
-                    color: AppTheme.border,
-                    borderRadius: AppTheme.borderRadiusCircle,
+                    color: context.ramis.border,
+                    borderRadius: RamisRadius.extraLarge,
                   ),
                 ),
               ),
@@ -84,34 +84,35 @@ class _ChecklistFormState extends State<ChecklistForm> {
                 widget.tipo == 'final'
                     ? 'Finalizar Jornada'
                     : 'Checklist de apertura',
-                style: AppTheme.titleLarge,
+                style: Theme.of(context).textTheme.titleLarge!,
               ),
-              const SizedBox(height: AppTheme.spacingXL),
+              SizedBox(height: RamisSpacing.xLarge),
 
               if (widget.tipo == 'final') ...[
                 Text(
                     'Odómetro inicial: ${widget.kmInicial ?? widget.kilometrajeBase} km'),
                 Text(
                     'Combustible abastecido en ruta: ${widget.galonesAbastecidos.toStringAsFixed(2)} gal'),
-                const SizedBox(height: 12),
+                SizedBox(height: RamisSpacing.mediumSmall),
               ],
               // Kilometraje
-              TextFormField(
+              RamisTextField(
                 onChanged: (_) => setState(() {}),
                 controller: _kmController,
-                decoration: AppTheme.inputDecoration.copyWith(
+                decoration: InputDecoration(
                   labelText: widget.tipo == 'final'
                       ? 'Odómetro Final (km)'
                       : 'Kilometraje Inicial',
                   suffixText: 'km',
-                  prefixIcon: const Icon(Icons.speed),
+                  prefixIcon: Icon(Icons.speed),
                   helperText:
                       'Kilometraje actual: ${widget.kilometrajeBase.toStringAsFixed(0)} km',
-                  helperStyle:
-                      AppTheme.bodySmall.copyWith(color: AppTheme.primary),
+                  helperStyle: Theme.of(context)
+                      .textTheme
+                      .bodySmall!
+                      .copyWith(color: Theme.of(context).colorScheme.primary),
                 ),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) {
                     return 'Ingrese el kilometraje';
@@ -127,20 +128,20 @@ class _ChecklistFormState extends State<ChecklistForm> {
                 },
               ),
 
-              const SizedBox(height: AppTheme.spacingL),
+              SizedBox(height: RamisSpacing.medium),
 
               // Nivel de combustible
               DropdownButtonFormField<String>(
                 initialValue: _nivelCombustible,
                 validator: (v) =>
                     v == null ? 'Seleccione el combustible de cierre' : null,
-                decoration: AppTheme.inputDecoration.copyWith(
+                decoration: InputDecoration(
                   labelText: widget.tipo == 'final'
                       ? 'Combustible de cierre'
                       : 'Nivel de Combustible',
-                  prefixIcon: const Icon(Icons.local_gas_station),
+                  prefixIcon: Icon(Icons.local_gas_station),
                 ),
-                items: const [
+                items: [
                   DropdownMenuItem(value: '0', child: Text('Vacío')),
                   DropdownMenuItem(value: '25', child: Text('1/4')),
                   DropdownMenuItem(value: '50', child: Text('1/2')),
@@ -150,40 +151,41 @@ class _ChecklistFormState extends State<ChecklistForm> {
                 onChanged: (v) => setState(() => _nivelCombustible = v ?? '75'),
               ),
 
-              const SizedBox(height: AppTheme.spacingL),
+              SizedBox(height: RamisSpacing.medium),
 
               if (widget.tipo == 'final') _resumenCierre(),
               // Estado general de apertura; el cierre usa la conformidad del checklist.
               if (widget.tipo != 'final')
-                TextFormField(
+                RamisTextField(
                   controller: _estadoGeneralController,
-                  decoration: AppTheme.inputDecoration.copyWith(
+                  decoration: InputDecoration(
                     labelText: 'Estado General del Vehículo',
-                    prefixIcon: const Icon(Icons.car_repair),
+                    prefixIcon: Icon(Icons.car_repair),
                   ),
                   validator: (v) => v == null || v.trim().isEmpty
                       ? 'Ingrese el estado general'
                       : null,
                 ),
 
-              const SizedBox(height: AppTheme.spacingL),
+              SizedBox(height: RamisSpacing.medium),
 
               // Conforme switch
               SwitchListTile(
-                title: Text('Conforme', style: AppTheme.titleSmall),
+                title: Text('Conforme',
+                    style: Theme.of(context).textTheme.titleSmall!),
                 subtitle: Text(
                   _conforme
                       ? 'El vehículo está en buenas condiciones'
                       : 'Se detectaron problemas',
-                  style: AppTheme.bodySmall,
+                  style: Theme.of(context).textTheme.bodySmall!,
                 ),
                 value: _conforme,
-                activeThumbColor: AppTheme.secondary,
+                activeThumbColor: Theme.of(context).colorScheme.primary,
                 onChanged: (v) => setState(() => _conforme = v),
                 contentPadding: EdgeInsets.zero,
               ),
 
-              const SizedBox(height: AppTheme.spacingL),
+              SizedBox(height: RamisSpacing.medium),
 
               // Observaciones
               ObservacionFields(
@@ -196,33 +198,24 @@ class _ChecklistFormState extends State<ChecklistForm> {
                     _foto = foto;
                   }),
 
-              const SizedBox(height: AppTheme.spacingXXL),
+              SizedBox(height: RamisSpacing.xxLarge),
 
-              SizedBox(
-                height: 52,
-                child: ElevatedButton.icon(
+              ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 52),
+                child: RamisButton(
+                  isLoading: _isSubmitting,
+                  label: _isSubmitting
+                      ? 'Enviando...'
+                      : widget.tipo == 'final'
+                          ? 'Confirmar y Finalizar Jornada'
+                          : 'Enviar Checklist',
                   onPressed: _isSubmitting ? null : _submit,
-                  icon: _isSubmitting
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppTheme.textOnPrimary,
-                          ),
-                        )
-                      : const Icon(Icons.send),
-                  label: Text(
-                    _isSubmitting
-                        ? 'Enviando...'
-                        : widget.tipo == 'final'
-                            ? 'Confirmar y Finalizar Jornada'
-                            : 'Enviar Checklist',
-                  ),
+                  variant: RamisButtonVariant.primary,
+                  icon: Icons.send,
                 ),
               ),
 
-              const SizedBox(height: AppTheme.spacingL),
+              SizedBox(height: RamisSpacing.medium),
             ],
           ),
         ),
@@ -242,7 +235,7 @@ class _ChecklistFormState extends State<ChecklistForm> {
         : (widget.nivelInicial! - nivel) / 100 * widget.capacidadTanque! +
             widget.galonesAbastecidos;
     return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: EdgeInsets.symmetric(vertical: RamisSpacing.mediumSmall),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(
               'Resumen preliminar · Recorrido: ${recorrido != null && recorrido >= 0 ? recorrido.toStringAsFixed(1) : "Pendiente"} km'),
@@ -251,7 +244,7 @@ class _ChecklistFormState extends State<ChecklistForm> {
           Text(
               'Rendimiento: ${recorrido != null && recorrido >= 0 && consumo != null && consumo > 0 ? (recorrido / consumo).toStringAsFixed(2) : "Sin estimación"} km/gal'),
           if (widget.capacidadTanque == null)
-            const Text(
+            Text(
                 'La capacidad del tanque debe estar configurada para estimar el consumo.'),
         ]));
   }

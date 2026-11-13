@@ -106,6 +106,7 @@ void main() {
           home: const Scaffold(body: RamisLogo()),
         ),
       );
+      await tester.pumpAndSettle();
       final logo = tester.widget<Image>(find.byType(Image).first);
       expect((logo.image as AssetImage).assetName,
           RamisAssets.logoOriginalExpanded);
@@ -159,6 +160,7 @@ void main() {
           ),
         ),
       );
+      await tester.pumpAndSettle();
       final background = tester.widget<Image>(find.byType(Image).first);
       expect((background.image as AssetImage).assetName, entry.$2);
       expect(find.text('Contenido'), findsOneWidget);

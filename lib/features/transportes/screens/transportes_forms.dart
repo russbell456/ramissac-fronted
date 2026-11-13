@@ -1,3 +1,4 @@
+import 'package:sistema_ocs/core/design_system/ramis_design_system.dart';
 import 'dart:convert';
 import 'dart:ui' as ui;
 
@@ -27,7 +28,7 @@ class _FirmaTrabajadorScreenState extends State<FirmaTrabajadorScreen> {
   Future<void> _confirmar() async {
     if (_controller.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Debe firmar antes de continuar')),
+        SnackBar(content: Text('Debe firmar antes de continuar')),
       );
       return;
     }
@@ -45,25 +46,26 @@ class _FirmaTrabajadorScreenState extends State<FirmaTrabajadorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Firma del trabajador'),
+    return RamisScaffold(
+      maxContentWidth: 1200,
+      appBar: RamisAppBar(
+        title: 'Firma del trabajador',
+        automaticallyImplyLeading: true,
         actions: [
           IconButton(
-            tooltip: 'Limpiar firma',
-            onPressed: _controller.clear,
-            icon: const Icon(Icons.clear),
-          ),
+              tooltip: 'Limpiar firma',
+              onPressed: _controller.clear,
+              icon: Icon(Icons.clear))
         ],
       ),
       body: Column(
         children: [
           Expanded(
             child: Container(
-              margin: const EdgeInsets.all(16),
+              margin: EdgeInsets.all(RamisSpacing.medium),
               decoration: BoxDecoration(
                 color: Colors.white,
-                border: Border.all(color: Colors.grey.shade400),
+                border: Border.all(color: context.ramis.surfaceVariant),
               ),
               child: Signature(
                 controller: _controller,
@@ -72,13 +74,15 @@ class _FirmaTrabajadorScreenState extends State<FirmaTrabajadorScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            padding: EdgeInsets.fromLTRB(RamisSpacing.medium, 0,
+                RamisSpacing.medium, RamisSpacing.medium),
             child: SizedBox(
               width: double.infinity,
-              child: FilledButton.icon(
+              child: RamisButton(
+                label: 'Usar firma',
                 onPressed: _confirmar,
-                icon: const Icon(Icons.check),
-                label: const Text('Usar firma'),
+                variant: RamisButtonVariant.primary,
+                icon: Icons.check,
               ),
             ),
           ),
@@ -272,7 +276,7 @@ class _IniciarRutaScreenState extends ConsumerState<IniciarRutaScreen> {
   Future<void> _firmar() async {
     final signature = await Navigator.push<String>(
       context,
-      MaterialPageRoute(builder: (_) => const FirmaTrabajadorScreen()),
+      MaterialPageRoute(builder: (_) => FirmaTrabajadorScreen()),
     );
     if (signature != null) setState(() => _firma = signature);
   }
@@ -284,7 +288,7 @@ class _IniciarRutaScreenState extends ConsumerState<IniciarRutaScreen> {
         !_frenos ||
         !_luces) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Complete la firma y los tres checks')),
+        SnackBar(content: Text('Complete la firma y los tres checks')),
       );
       return;
     }
@@ -328,24 +332,25 @@ class _IniciarRutaScreenState extends ConsumerState<IniciarRutaScreen> {
       submitLabel: 'Iniciar ruta',
       children: [
         Text('Ruta: ${widget.route.origen} - ${widget.route.destino}'),
-        const SizedBox(height: 12),
-        OutlinedButton.icon(
+        SizedBox(height: RamisSpacing.mediumSmall),
+        RamisButton(
+          label: _firma == null ? 'Firmar' : 'Firma registrada',
           onPressed: _firmar,
-          icon: Icon(_firma == null ? Icons.draw : Icons.check),
-          label: Text(_firma == null ? 'Firmar' : 'Firma registrada'),
+          variant: RamisButtonVariant.outlined,
+          icon: _firma == null ? Icons.draw : Icons.check,
         ),
         CheckboxListTile(
             value: _llantas,
             onChanged: (v) => setState(() => _llantas = v ?? false),
-            title: const Text('Llantas verificadas')),
+            title: Text('Llantas verificadas')),
         CheckboxListTile(
             value: _frenos,
             onChanged: (v) => setState(() => _frenos = v ?? false),
-            title: const Text('Frenos verificados')),
+            title: Text('Frenos verificados')),
         CheckboxListTile(
             value: _luces,
             onChanged: (v) => setState(() => _luces = v ?? false),
-            title: const Text('Luces verificadas')),
+            title: Text('Luces verificadas')),
         _field(_kilometraje, 'Kilometraje de salida', number: true),
         _field(_combustible, 'Combustible de salida'),
       ],
@@ -438,8 +443,8 @@ class _MantenimientoFormScreenState
   bool _saving = false;
 
   Future<void> _seleccionarAveria() async {
-    final averias = await ref
-        .read(averiasVehiculoProvider(widget.vehicleId).future);
+    final averias =
+        await ref.read(averiasVehiculoProvider(widget.vehicleId).future);
     if (!mounted) return;
     if (averias.isEmpty) {
       _showError(context, 'El vehiculo no tiene averias registradas.');
@@ -448,13 +453,12 @@ class _MantenimientoFormScreenState
     final seleccion = await showDialog<AveriaListModel>(
       context: context,
       builder: (_) => SimpleDialog(
-        title: const Text('Seleccione una averia'),
+        title: Text('Seleccione una averia'),
         children: [
           for (final a in averias)
             SimpleDialogOption(
               onPressed: () => Navigator.pop(context, a),
-              child:
-                  Text('${a.categoria} - ${a.componente} (${a.criticidad})'),
+              child: Text('${a.categoria} - ${a.componente} (${a.criticidad})'),
             ),
         ],
       ),
@@ -472,9 +476,7 @@ class _MantenimientoFormScreenState
     }
     setState(() => _saving = true);
     try {
-      await ref
-          .read(transportesServiceProvider)
-          .crearMantenimientoCorrectivo(
+      await ref.read(transportesServiceProvider).crearMantenimientoCorrectivo(
             CrearMantenimientoCorreactivoRequest(
               vehiculoId: widget.vehicleId,
               averiaId: _averiaSeleccionada!.id,
@@ -510,16 +512,15 @@ class _MantenimientoFormScreenState
       children: [
         Text('Vehículo ${widget.vehicleId}'),
         Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: OutlinedButton.icon(
+          padding: EdgeInsets.only(bottom: RamisSpacing.mediumSmall),
+          child: RamisButton(
+            label: _averiaSeleccionada == null
+                ? 'Seleccionar averia'
+                : '${_averiaSeleccionada!.categoria} - '
+                    '${_averiaSeleccionada!.componente}',
             onPressed: _seleccionarAveria,
-            icon: const Icon(Icons.build),
-            label: Text(
-              _averiaSeleccionada == null
-                  ? 'Seleccionar averia'
-                  : '${_averiaSeleccionada!.categoria} - '
-                      '${_averiaSeleccionada!.componente}',
-            ),
+            variant: RamisButtonVariant.outlined,
+            icon: Icons.build,
           ),
         ),
         _field(_description, 'Descripción de la falla', maxLines: 3),
@@ -548,20 +549,24 @@ class _FormScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
+    return RamisScaffold(
+      maxContentWidth: 1200,
+      appBar: RamisAppBar(
+        title: title,
+        automaticallyImplyLeading: true,
+      ),
       body: Form(
         key: formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(RamisSpacing.medium),
           children: [
             ...children,
-            const SizedBox(height: 16),
-            FilledButton(
+            SizedBox(height: RamisSpacing.medium),
+            RamisButton(
+              isLoading: saving,
+              label: submitLabel,
               onPressed: saving ? null : onSubmit,
-              child: saving
-                  ? const CircularProgressIndicator()
-                  : Text(submitLabel),
+              variant: RamisButtonVariant.primary,
             ),
           ],
         ),
@@ -577,14 +582,14 @@ Widget _field(
   int maxLines = 1,
 }) {
   return Padding(
-    padding: const EdgeInsets.only(bottom: 12),
-    child: TextFormField(
+    padding: EdgeInsets.only(bottom: RamisSpacing.mediumSmall),
+    child: RamisTextField(
       controller: controller,
       maxLines: maxLines,
       keyboardType:
-          number ? const TextInputType.numberWithOptions(decimal: true) : null,
+          number ? TextInputType.numberWithOptions(decimal: true) : null,
       decoration:
-          InputDecoration(labelText: label, border: const OutlineInputBorder()),
+          InputDecoration(labelText: label, border: OutlineInputBorder()),
       validator: (value) {
         if (value == null || value.trim().isEmpty) return 'Campo requerido';
         if (number && double.tryParse(value.trim()) == null) {

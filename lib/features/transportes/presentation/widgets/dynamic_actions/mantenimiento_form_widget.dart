@@ -1,5 +1,5 @@
+import 'package:sistema_ocs/core/design_system/ramis_design_system.dart';
 import 'package:flutter/material.dart';
-import 'package:sistema_ocs/core/theme/app_theme.dart';
 import 'package:sistema_ocs/features/transportes/domain/entities/jornada_transporte.dart';
 
 class MantenimientoFormWidget extends StatefulWidget {
@@ -66,10 +66,10 @@ class _MantenimientoFormWidgetState extends State<MantenimientoFormWidget> {
       children: [
         DropdownButtonFormField<String>(
           isExpanded: true,
-          decoration: AppTheme.inputDecoration.copyWith(
+          decoration: InputDecoration(
             labelText: 'NOMBRE DE EMPRESA TALLER O CONCESIONARIA',
           ),
-          items: const [
+          items: [
             DropdownMenuItem(value: "CONAUTO", child: Text("CONAUTO")),
             DropdownMenuItem(value: "PERUMOTOR", child: Text("PERUMOTOR")),
             DropdownMenuItem(value: "MALVEX", child: Text("MALVEX")),
@@ -82,10 +82,10 @@ class _MantenimientoFormWidgetState extends State<MantenimientoFormWidget> {
           validator: (value) => value == null ? 'Seleccione un taller' : null,
         ),
         if (_taller == 'Otros') ...[
-          const SizedBox(height: AppTheme.spacingM),
-          TextFormField(
+          SizedBox(height: RamisSpacing.mediumSmall),
+          RamisTextField(
             controller: _otroTallerController,
-            decoration: AppTheme.inputDecoration.copyWith(
+            decoration: InputDecoration(
               labelText: 'Especifique el taller',
             ),
             validator: (value) => value == null || value.trim().isEmpty
@@ -94,13 +94,14 @@ class _MantenimientoFormWidgetState extends State<MantenimientoFormWidget> {
             onChanged: (_) => _emit(),
           ),
         ],
-        const SizedBox(height: AppTheme.spacingL),
+        SizedBox(height: RamisSpacing.medium),
         Text(
           'Llenar al momento de recoger el vehículo del taller de mantenimiento',
-          style: AppTheme.bodySmall,
+          style: Theme.of(context).textTheme.bodySmall!,
         ),
-        const SizedBox(height: AppTheme.spacingS),
-        Text('TIPO DE MANTENIMIENTO', style: AppTheme.bodyMedium),
+        SizedBox(height: RamisSpacing.small),
+        Text('TIPO DE MANTENIMIENTO',
+            style: Theme.of(context).textTheme.bodyMedium!),
         RadioGroup<String>(
           groupValue: _tipo,
           onChanged: (val) {
@@ -108,7 +109,7 @@ class _MantenimientoFormWidgetState extends State<MantenimientoFormWidget> {
             setState(() => _tipo = val);
             _emit();
           },
-          child: const Row(
+          child: Row(
             children: [
               Expanded(
                 child: RadioListTile<String>(
@@ -125,7 +126,7 @@ class _MantenimientoFormWidgetState extends State<MantenimientoFormWidget> {
             ],
           ),
         ),
-        const SizedBox(height: AppTheme.spacingM),
+        SizedBox(height: RamisSpacing.mediumSmall),
         if (_tipo == 'Preventivo') ...[
           FormField<bool>(
             validator: (_) => _preventivos.values.any((selected) => selected)
@@ -148,9 +149,9 @@ class _MantenimientoFormWidgetState extends State<MantenimientoFormWidget> {
                       controlAffinity: ListTileControlAffinity.leading,
                     )),
                 if (_preventivos['Otros'] == true)
-                  TextFormField(
+                  RamisTextField(
                     controller: _otroTrabajoController,
-                    decoration: AppTheme.inputDecoration.copyWith(
+                    decoration: InputDecoration(
                       labelText: 'Otro trabajo realizado',
                     ),
                     validator: (value) => value == null || value.trim().isEmpty
@@ -163,15 +164,17 @@ class _MantenimientoFormWidgetState extends State<MantenimientoFormWidget> {
                   ),
                 if (field.hasError)
                   Text(field.errorText!,
-                      style:
-                          AppTheme.bodySmall.copyWith(color: AppTheme.error)),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall!
+                          .copyWith(color: context.ramis.error)),
               ],
             ),
           ),
         ] else ...[
-          TextFormField(
+          RamisTextField(
             controller: _correctivoController,
-            decoration: AppTheme.inputDecoration.copyWith(
+            decoration: InputDecoration(
               labelText:
                   'CORRECTIVO: Describir el mantenimiento correctivo realizado...',
               helperText: 'Tomar referencia del informe del mantenimiento',

@@ -30,8 +30,8 @@ class RamisButton extends StatelessWidget {
     final colors = theme.colorScheme;
     final destructive = variant == RamisButtonVariant.destructive;
     final foreground = destructive ? colors.onError : colors.onPrimary;
-    final child = SizedBox(
-      height: height,
+    final child = ConstrainedBox(
+      constraints: BoxConstraints(minHeight: height),
       child: isLoading
           ? Center(
               child: SizedBox(
@@ -54,7 +54,7 @@ class RamisButton extends StatelessWidget {
                   Icon(icon, size: 18),
                   const SizedBox(width: 8),
                 ],
-                Text(label),
+                Flexible(child: Text(label, textAlign: TextAlign.center)),
               ],
             ),
     );

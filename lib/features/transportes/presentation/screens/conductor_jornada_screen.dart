@@ -1,10 +1,10 @@
+import 'package:sistema_ocs/core/design_system/ramis_design_system.dart';
 import '../widgets/observacion_fields.dart';
 import '../widgets/transport_notification_bell.dart';
 import 'documentos_screen.dart';
 import '../../../dashboard/custom_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sistema_ocs/core/theme/app_theme.dart';
 import 'package:sistema_ocs/features/transportes/domain/entities/jornada_transporte.dart';
 import 'package:sistema_ocs/features/transportes/presentation/screens/mi_jornada_screen.dart';
 import 'package:sistema_ocs/features/transportes/providers/jornadas_provider.dart';
@@ -33,67 +33,70 @@ class _ConductorJornadaScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return RamisScaffold(
+      maxContentWidth: 1200,
       drawer: CustomDrawer(
           onMenuItemTap: (_) =>
               Navigator.of(context).popUntil((route) => route.isFirst)),
-      appBar: AppBar(
-        title: Text([
-          'Seguimiento de la Jornada Actual',
+      appBar: RamisAppBar(
+        title: [
+          'Mi jornada',
           'Historial de jornadas',
           'Mis Documentos'
-        ][_selectedIndex]),
+        ][_selectedIndex],
+        automaticallyImplyLeading: true,
         actions: [
-          const TransportNotificationBell(),
+          TransportNotificationBell(),
           IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Cerrar Sesión',
-            onPressed: () async {
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Text('Cerrar Sesión'),
-                  content:
-                      const Text('¿Estás seguro de que deseas cerrar sesión?'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx, false),
-                      child: const Text('Cancelar'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () => Navigator.pop(ctx, true),
-                      child: const Text('Cerrar Sesión'),
-                    ),
-                  ],
-                ),
-              );
-              if (confirm == true) {
-                await ref.read(authNotifierProvider.notifier).logout();
-                ref.read(navigatorKeyProvider).currentState?.pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (_) => const LoginScreen()),
-                      (route) => false,
-                    );
-              }
-            },
-          ),
+              icon: Icon(Icons.logout),
+              tooltip: 'Cerrar Sesión',
+              onPressed: () async {
+                final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                            title: Text('Cerrar Sesión'),
+                            content: Text(
+                                '¿Estás seguro de que deseas cerrar sesión?'),
+                            actions: [
+                              RamisButton(
+                                label: 'Cancelar',
+                                onPressed: () => Navigator.pop(ctx, false),
+                                variant: RamisButtonVariant.text,
+                              ),
+                              RamisButton(
+                                label: 'Cerrar Sesión',
+                                onPressed: () => Navigator.pop(ctx, true),
+                                variant: RamisButtonVariant.primary,
+                              )
+                            ]));
+                if (confirm == true) {
+                  await ref.read(authNotifierProvider.notifier).logout();
+                  ref
+                      .read(navigatorKeyProvider)
+                      .currentState
+                      ?.pushAndRemoveUntil(
+                          MaterialPageRoute(builder: (_) => LoginScreen()),
+                          (route) => false);
+                }
+              })
         ],
       ),
       body: IndexedStack(
         index: _selectedIndex,
         children: [
-          const MiJornadaScreen(embedded: true),
+          MiJornadaScreen(embedded: true),
           _AccionesRegistradasTab(
               onNewAction: () => setState(() => _selectedIndex = 0)),
           _selectedIndex == 2
-              ? const MisDocumentosScreen(embedded: true)
-              : const SizedBox.shrink(),
+              ? MisDocumentosScreen(embedded: true)
+              : SizedBox.shrink(),
         ],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) =>
             setState(() => _selectedIndex = index),
-        destinations: const [
+        destinations: [
           NavigationDestination(
               icon: Icon(Icons.local_shipping_outlined),
               selectedIcon: Icon(Icons.local_shipping),
@@ -123,23 +126,10 @@ class _AccionesRegistradasTab extends ConsumerWidget {
     final jornadaAsync = ref.watch(miJornadaProvider);
 
     return accionesAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppTheme.spacingL),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('No se pudieron cargar las acciones: $error',
-                  textAlign: TextAlign.center),
-              const SizedBox(height: AppTheme.spacingM),
-              TextButton(
-                onPressed: () => ref.invalidate(accionesRegistradasProvider),
-                child: const Text('Reintentar'),
-              ),
-            ],
-          ),
-        ),
+      loading: () => RamisLoading(),
+      error: (error, _) => RamisErrorView(
+        description: 'No se pudieron cargar las acciones: $error',
+        onRetry: () => ref.invalidate(accionesRegistradasProvider),
       ),
       data: (acciones) => RefreshIndicator(
         onRefresh: () async {
@@ -148,34 +138,37 @@ class _AccionesRegistradasTab extends ConsumerWidget {
           await refreshed;
         },
         child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(AppTheme.spacingL),
+          physics: AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.all(RamisSpacing.medium),
           children: [
-            Text('Lo que registraste', style: AppTheme.titleLarge),
-            const SizedBox(height: AppTheme.spacingS),
+            Text('Lo que registraste',
+                style: Theme.of(context).textTheme.titleLarge!),
+            SizedBox(height: RamisSpacing.small),
             Text(
               'Consulta tus acciones y abre cada una para ver sus datos.',
-              style: AppTheme.bodyMedium.copyWith(
-                color: AppTheme.textSecondary,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                    color: context.ramis.textSecondary,
+                  ),
             ),
-            const SizedBox(height: AppTheme.spacingL),
+            SizedBox(height: RamisSpacing.medium),
             if (jornadaAsync.value != null)
               _JornadaActivaCard(jornada: jornadaAsync.value!),
             if (acciones.isEmpty)
-              AppCard(
+              RamisCard(
                 child: Column(
                   children: [
-                    const Icon(Icons.assignment_outlined,
-                        size: 48, color: AppTheme.textDisabled),
-                    const SizedBox(height: AppTheme.spacingM),
+                    Icon(Icons.assignment_outlined,
+                        size: 48,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    SizedBox(height: RamisSpacing.mediumSmall),
                     Text('Aún no tienes acciones registradas.',
-                        style: AppTheme.bodyMedium),
-                    const SizedBox(height: AppTheme.spacingM),
-                    OutlinedButton.icon(
+                        style: Theme.of(context).textTheme.bodyMedium!),
+                    SizedBox(height: RamisSpacing.mediumSmall),
+                    RamisButton(
+                      label: 'Registrar nueva acción',
                       onPressed: onNewAction,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Registrar nueva acción'),
+                      variant: RamisButtonVariant.outlined,
+                      icon: Icons.add,
                     ),
                   ],
                 ),
@@ -200,32 +193,30 @@ class _JornadaActivaCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppTheme.spacingL),
-      child: AppCard(
-        backgroundColor: AppTheme.primaryLight,
+      padding: EdgeInsets.only(bottom: RamisSpacing.medium),
+      child: RamisCard(
+        color: Theme.of(context).colorScheme.primaryContainer,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Jornada por atender', style: AppTheme.titleMedium),
-            const SizedBox(height: AppTheme.spacingS),
+            Text('Jornada por atender',
+                style: Theme.of(context).textTheme.titleMedium!),
+            SizedBox(height: RamisSpacing.small),
             Text(
               jornada.accionTipo ?? 'Jornada asignada',
-              style: AppTheme.bodyMedium,
+              style: Theme.of(context).textTheme.bodyMedium!,
             ),
-            const SizedBox(height: AppTheme.spacingM),
-            OutlinedButton.icon(
+            SizedBox(height: RamisSpacing.mediumSmall),
+            RamisButton(
+              label: 'Continuar jornada',
               onPressed: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const MiJornadaScreen(),
-                  ),
-                );
+                await Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => MiJornadaScreen()));
                 ref.invalidate(miJornadaProvider);
                 ref.invalidate(accionesRegistradasProvider);
               },
-              icon: const Icon(Icons.arrow_forward),
-              label: const Text('Continuar jornada'),
+              variant: RamisButtonVariant.outlined,
+              icon: Icons.arrow_forward,
             ),
           ],
         ),
@@ -249,17 +240,18 @@ class _AccionTileState extends ConsumerState<_AccionTile> {
   @override
   Widget build(BuildContext context) {
     final accion = widget.accion;
-    return Card(
-      margin: const EdgeInsets.only(bottom: AppTheme.spacingM),
+    return RamisCard(
+      padding: EdgeInsets.zero,
+      margin: EdgeInsets.only(bottom: RamisSpacing.mediumSmall),
       child: ExpansionTile(
         onExpansionChanged: (expanded) => setState(() => _expanded = expanded),
         leading: Icon(_iconoAccion(accion.accionTipo),
-            color: colorSemaforo(accion.estadoSemaforo)),
+            color: colorSemaforo(context, accion.estadoSemaforo)),
         title: Text(accion.accionTipo ?? 'Acción #${accion.id}',
             maxLines: 2, overflow: TextOverflow.ellipsis),
         subtitle: Text(
           '${_fecha(accion.fechaInicio)} · ${_estado(accion.estado)}',
-          style: AppTheme.bodySmall,
+          style: Theme.of(context).textTheme.bodySmall!,
         ),
         children: [
           if (_expanded) _DetalleAccion(id: accion.id),
@@ -277,78 +269,85 @@ class _DetalleAccion extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return ref.watch(detalleAccionProvider(id)).when(
-          loading: () => const Padding(
-            padding: EdgeInsets.all(AppTheme.spacingL),
+          loading: () => Padding(
+            padding: EdgeInsets.all(RamisSpacing.medium),
             child: CircularProgressIndicator(),
           ),
           error: (error, _) => Padding(
-            padding: const EdgeInsets.all(AppTheme.spacingL),
-            child: TextButton(
+            padding: EdgeInsets.all(RamisSpacing.medium),
+            child: RamisButton(
+              label: 'No se pudo cargar el detalle. Reintentar',
               onPressed: () => ref.invalidate(detalleAccionProvider(id)),
-              child: const Text('No se pudo cargar el detalle. Reintentar'),
+              variant: RamisButtonVariant.text,
             ),
           ),
           data: (accion) => Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            padding: EdgeInsets.fromLTRB(RamisSpacing.medium, 0,
+                RamisSpacing.medium, RamisSpacing.medium),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Divider(),
-                _dato('Vehículo', accion.vehiculoId?.toString()),
-                _dato('Kilometraje inicial',
+                Divider(),
+                _dato(context, 'Vehículo', accion.vehiculoId?.toString()),
+                _dato(context, 'Kilometraje inicial',
                     accion.kmInicial == null ? null : '${accion.kmInicial} km'),
                 _dato(
+                    context,
                     'Combustible inicial',
                     accion.nivelCombustible == null
                         ? null
                         : '${accion.nivelCombustible}%'),
-                _dato('Ruta', accion.ruta),
-                _dato('Observaciones', accion.observaciones),
+                _dato(context, 'Ruta', accion.ruta),
+                _dato(context, 'Observaciones', accion.observaciones),
                 if (accion.fotoObservacion != null)
                   FotoObservacion(url: accion.fotoObservacion!),
-                _dato('Jornada principal', accion.jornadaPadreId?.toString()),
-                _dato('Galones consumidos',
+                _dato(context, 'Jornada principal',
+                    accion.jornadaPadreId?.toString()),
+                _dato(context, 'Galones consumidos',
                     accion.galonesConsumidos?.toStringAsFixed(2)),
-                _dato('Rendimiento km/gal',
+                _dato(context, 'Rendimiento km/gal',
                     accion.rendimientoKmGalon?.toStringAsFixed(2)),
                 if (accion.detallesGrua case final detalle?) ...[
-                  _dato('Actividad', detalle['actividad']?.toString()),
-                  _dato('Horómetro inicial',
+                  _dato(context, 'Actividad', detalle['actividad']?.toString()),
+                  _dato(context, 'Horómetro inicial',
                       detalle['horometro_inicial']?.toString()),
-                  _dato('Horómetro final',
+                  _dato(context, 'Horómetro final',
                       detalle['horometro_final']?.toString()),
                 ],
                 if (accion.detallesCombustible case final detalle?) ...[
-                  _dato('Galones abastecidos', detalle['galones']?.toString()),
+                  _dato(context, 'Galones abastecidos',
+                      detalle['galones']?.toString()),
                   _dato(
+                      context,
                       'Combustible final',
                       detalle['nivel_final'] == null
                           ? null
                           : "${detalle['nivel_final']}%"),
                 ],
                 if (accion.detallesMantenimiento case final detalle?) ...[
-                  _dato('Taller', detalle['taller']?.toString()),
-                  _dato('Tipo', detalle['tipo']?.toString()),
-                  _dato('Trabajos',
+                  _dato(context, 'Taller', detalle['taller']?.toString()),
+                  _dato(context, 'Tipo', detalle['tipo']?.toString()),
+                  _dato(context, 'Trabajos',
                       (detalle['trabajos_preventivos'] as List?)?.join(', ')),
-                  _dato('Descripción',
+                  _dato(context, 'Descripción',
                       detalle['descripcion_correctivo']?.toString()),
                 ],
                 if (accion.detallesInspeccion case final detalle?) ...[
-                  _dato('Fecha de inspección',
+                  _dato(context, 'Fecha de inspección',
                       detalle['fecha_inspeccion']?.toString()),
-                  _dato(
-                      'Vencimiento', detalle['fecha_vencimiento']?.toString()),
+                  _dato(context, 'Vencimiento',
+                      detalle['fecha_vencimiento']?.toString()),
                 ],
                 if (accion.detallesCocada case final detalle?)
-                  _dato('Cocada', detalle['medida']?.toString()),
+                  _dato(context, 'Cocada', detalle['medida']?.toString()),
                 if (accion.detallesTorque case final detalle?)
-                  _dato('Torque', detalle['medida']?.toString()),
+                  _dato(context, 'Torque', detalle['medida']?.toString()),
                 if (accion.detallesTrabajosExternos case final detalle?)
-                  _dato('Trabajos realizados',
+                  _dato(context, 'Trabajos realizados',
                       detalle['descripcion_trabajos']?.toString()),
                 if (accion.checklistFlash != null)
                   _dato(
+                      context,
                       'Check List Flash',
                       accion.checklistFlash!.entries
                           .where((item) => item.value == true)
@@ -356,6 +355,7 @@ class _DetalleAccion extends ConsumerWidget {
                           .join(', ')),
                 if (accion.incidencias.isNotEmpty)
                   _dato(
+                      context,
                       'Incidencias',
                       accion.incidencias
                           .map((item) => '${item.tipo}: ${item.descripcion}')
@@ -366,15 +366,15 @@ class _DetalleAccion extends ConsumerWidget {
         );
   }
 
-  Widget? _dato(String label, String? value) {
+  Widget? _dato(BuildContext context, String label, String? value) {
     if (value == null || value.trim().isEmpty) return null;
     return Padding(
-      padding: const EdgeInsets.only(top: AppTheme.spacingS),
+      padding: EdgeInsets.only(top: RamisSpacing.small),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: AppTheme.bodySmall),
-          Text(value, style: AppTheme.bodyMedium),
+          Text(label, style: Theme.of(context).textTheme.bodySmall!),
+          Text(value, style: Theme.of(context).textTheme.bodyMedium!),
         ],
       ),
     );

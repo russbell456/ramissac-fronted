@@ -1,5 +1,5 @@
+import 'package:sistema_ocs/core/design_system/ramis_design_system.dart';
 import 'package:flutter/material.dart';
-import 'package:sistema_ocs/core/theme/app_theme.dart';
 import 'package:sistema_ocs/features/transportes/domain/entities/jornada_transporte.dart';
 import 'package:sistema_ocs/features/transportes/presentation/widgets/fuel_gauge_selector.dart';
 
@@ -42,29 +42,29 @@ class _CombustibleFormWidgetState extends State<CombustibleFormWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TextFormField(
+        RamisTextField(
             controller: _costoController,
-            decoration: const InputDecoration(labelText: 'Costo total (S/)'),
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(labelText: 'Costo total (S/)'),
+            keyboardType: TextInputType.numberWithOptions(decimal: true),
             onChanged: (_) => _emit(),
             validator: (v) => (v ?? '').isNotEmpty &&
                     (_galones(v!) == null || _galones(v)! < 0)
                 ? 'Ingrese un costo válido'
                 : null),
-        TextFormField(
+        RamisTextField(
             controller: _comprobanteController,
-            decoration: const InputDecoration(labelText: 'N° factura / vale'),
+            decoration: InputDecoration(labelText: 'N° factura / vale'),
             maxLength: 100,
             onChanged: (_) => _emit()),
-        TextFormField(
+        RamisTextField(
           controller: _galonesController,
-          decoration: AppTheme.inputDecoration.copyWith(
+          decoration: InputDecoration(
             labelText: 'CANTIDAD COMBUSTIBLE ABASTECIDO EN GALONES',
             helperText:
                 'Colocar la cantidad de galones abastecidos en el grifo',
             helperMaxLines: 2,
           ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          keyboardType: TextInputType.numberWithOptions(decimal: true),
           validator: (value) {
             final cantidad = _galones(value ?? '');
             return cantidad == null || cantidad < 0.1 || cantidad > 100
@@ -73,11 +73,12 @@ class _CombustibleFormWidgetState extends State<CombustibleFormWidget> {
           },
           onChanged: (_) => _emit(),
         ),
-        const SizedBox(height: AppTheme.spacingL),
-        Text('NIVEL DE COMBUSTIBLE FINAL', style: AppTheme.bodyMedium),
+        SizedBox(height: RamisSpacing.medium),
+        Text('NIVEL DE COMBUSTIBLE FINAL',
+            style: Theme.of(context).textTheme.bodyMedium!),
         Text('Colocar el nivel después de abastecer',
-            style: AppTheme.bodySmall),
-        const SizedBox(height: AppTheme.spacingS),
+            style: Theme.of(context).textTheme.bodySmall!),
+        SizedBox(height: RamisSpacing.small),
         FormField<int>(
           validator: (value) =>
               value == null ? 'Seleccione el nivel de combustible final' : null,
@@ -94,7 +95,10 @@ class _CombustibleFormWidgetState extends State<CombustibleFormWidget> {
               ),
               if (field.hasError)
                 Text(field.errorText!,
-                    style: AppTheme.bodySmall.copyWith(color: AppTheme.error)),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall!
+                        .copyWith(color: context.ramis.error)),
             ],
           ),
         ),

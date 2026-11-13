@@ -1,3 +1,4 @@
+import 'package:sistema_ocs/core/design_system/ramis_design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sistema_ocs/features/transportes/models/vehiculo_model.dart';
@@ -20,21 +21,21 @@ class VehiculoDetalleScreen extends ConsumerWidget {
     final vehiculoState = ref.watch(vehiculoProvider(vehiculoId));
     return DefaultTabController(
       length: 4,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Historial del vehiculo'),
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Mantenimientos'),
-              Tab(text: 'Inspecciones'),
-              Tab(text: 'Averias'),
-              Tab(text: 'Incidentes'),
-            ],
-          ),
+      child: RamisScaffold(
+        maxContentWidth: 1200,
+        appBar: RamisAppBar(
+          title: 'Historial del vehiculo',
+          automaticallyImplyLeading: true,
+          bottom: TabBar(tabs: [
+            Tab(text: 'Mantenimientos'),
+            Tab(text: 'Inspecciones'),
+            Tab(text: 'Averias'),
+            Tab(text: 'Incidentes')
+          ]),
         ),
         body: vehiculoState.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text(e.toString())),
+          loading: () => RamisLoading(),
+          error: (e, _) => RamisErrorView(description: e.toString()),
           data: (vehiculo) => _VehiculoDetalleBody(
             vehiculo: vehiculo,
             role: role,
@@ -73,7 +74,7 @@ class _VehiculoDetalleBody extends ConsumerWidget {
   Widget _header(BuildContext context, WidgetRef ref) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(RamisSpacing.medium),
       color: Theme.of(context).colorScheme.surface,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,26 +83,27 @@ class _VehiculoDetalleBody extends ConsumerWidget {
             '${vehiculo.placa} - ${vehiculo.marca} ${vehiculo.modelo}',
             style: Theme.of(context).textTheme.titleLarge,
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: RamisSpacing.small),
           Wrap(
             spacing: 8,
             children: [
-              Chip(label: Text('Estado: ${vehiculo.estado}')),
+              RamisStatusChip(
+                label: 'Estado: ${vehiculo.estado}',
+              ),
               if (vehiculo.kilometrajeActual != null)
-                Chip(
-                  label: Text(
-                    'Km: ${vehiculo.kilometrajeActual!.toStringAsFixed(0)}',
-                  ),
+                RamisStatusChip(
+                  label:
+                      'Km: ${vehiculo.kilometrajeActual!.toStringAsFixed(0)}',
                 ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: RamisSpacing.small),
           Wrap(
             spacing: 8,
             children: [
               ActionChip(
-                avatar: const Icon(Icons.fact_check, size: 18),
-                label: const Text('Checklist salida'),
+                avatar: Icon(Icons.fact_check, size: 18),
+                label: Text('Checklist salida'),
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -117,8 +119,8 @@ class _VehiculoDetalleBody extends ConsumerWidget {
                 },
               ),
               ActionChip(
-                avatar: const Icon(Icons.fact_check_outlined, size: 18),
-                label: const Text('Checklist llegada'),
+                avatar: Icon(Icons.fact_check_outlined, size: 18),
+                label: Text('Checklist llegada'),
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -134,8 +136,8 @@ class _VehiculoDetalleBody extends ConsumerWidget {
                 },
               ),
               ActionChip(
-                avatar: const Icon(Icons.build, size: 18),
-                label: const Text('Reportar averia'),
+                avatar: Icon(Icons.build, size: 18),
+                label: Text('Reportar averia'),
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -148,8 +150,8 @@ class _VehiculoDetalleBody extends ConsumerWidget {
                 },
               ),
               ActionChip(
-                avatar: const Icon(Icons.report, size: 18),
-                label: const Text('Reportar incidente'),
+                avatar: Icon(Icons.report, size: 18),
+                label: Text('Reportar incidente'),
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -172,15 +174,18 @@ class _VehiculoDetalleBody extends ConsumerWidget {
   Widget _mantenimientos(BuildContext context, WidgetRef ref) {
     final state = ref.watch(mantenimientosVehiculoProvider(vehiculo.id));
     return state.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text(e.toString())),
+      loading: () => RamisLoading(),
+      error: (e, _) => RamisErrorView(description: e.toString()),
       data: (items) => items.isEmpty
-          ? const Center(child: Text('Sin mantenimientos'))
+          ? RamisEmptyState(
+              icon: Icons.inbox_outlined,
+              title: 'Sin registros',
+              description: 'Sin mantenimientos')
           : ListView(
               children: [
                 for (final item in items)
                   ListTile(
-                    leading: const Icon(Icons.build),
+                    leading: Icon(Icons.build),
                     title: Text(item.descripcion),
                     subtitle: Text(
                       '${item.tipoMantenimiento} | '
@@ -196,15 +201,18 @@ class _VehiculoDetalleBody extends ConsumerWidget {
   Widget _inspecciones(BuildContext context, WidgetRef ref) {
     final state = ref.watch(inspeccionesVehiculoProvider(vehiculo.id));
     return state.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text(e.toString())),
+      loading: () => RamisLoading(),
+      error: (e, _) => RamisErrorView(description: e.toString()),
       data: (items) => items.isEmpty
-          ? const Center(child: Text('Sin inspecciones'))
+          ? RamisEmptyState(
+              icon: Icons.inbox_outlined,
+              title: 'Sin registros',
+              description: 'Sin inspecciones')
           : ListView(
               children: [
                 for (final item in items)
                   ListTile(
-                    leading: const Icon(Icons.fact_check),
+                    leading: Icon(Icons.fact_check),
                     title: Text(item.tipo),
                     subtitle: Text('${item.fecha} | ${item.resultado}'),
                   ),
@@ -216,15 +224,18 @@ class _VehiculoDetalleBody extends ConsumerWidget {
   Widget _averias(BuildContext context, WidgetRef ref) {
     final state = ref.watch(averiasVehiculoProvider(vehiculo.id));
     return state.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text(e.toString())),
+      loading: () => RamisLoading(),
+      error: (e, _) => RamisErrorView(description: e.toString()),
       data: (items) => items.isEmpty
-          ? const Center(child: Text('Sin averias'))
+          ? RamisEmptyState(
+              icon: Icons.inbox_outlined,
+              title: 'Sin registros',
+              description: 'Sin averias')
           : ListView(
               children: [
                 for (final item in items)
                   ListTile(
-                    leading: const Icon(Icons.warning_amber),
+                    leading: Icon(Icons.warning_amber),
                     title: Text('${item.categoria} - ${item.componente}'),
                     subtitle: Text('${item.criticidad} | ${item.estado}'),
                   ),
@@ -236,15 +247,18 @@ class _VehiculoDetalleBody extends ConsumerWidget {
   Widget _incidentes(BuildContext context, WidgetRef ref) {
     final state = ref.watch(incidentesVehiculoProvider(vehiculo.id));
     return state.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text(e.toString())),
+      loading: () => RamisLoading(),
+      error: (e, _) => RamisErrorView(description: e.toString()),
       data: (items) => items.isEmpty
-          ? const Center(child: Text('Sin incidentes'))
+          ? RamisEmptyState(
+              icon: Icons.inbox_outlined,
+              title: 'Sin registros',
+              description: 'Sin incidentes')
           : ListView(
               children: [
                 for (final item in items)
                   ListTile(
-                    leading: const Icon(Icons.car_crash),
+                    leading: Icon(Icons.car_crash),
                     title: Text(item.tipo),
                     subtitle: Text(
                       '${item.fecha} | ${item.estado} | ${item.ubicacion}',
@@ -255,4 +269,3 @@ class _VehiculoDetalleBody extends ConsumerWidget {
     );
   }
 }
-

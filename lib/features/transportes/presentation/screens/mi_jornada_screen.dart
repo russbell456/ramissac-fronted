@@ -1,6 +1,6 @@
+import 'package:sistema_ocs/core/design_system/ramis_design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sistema_ocs/core/theme/app_theme.dart';
 import '../../domain/entities/jornada_transporte.dart';
 import '../../providers/jornadas_provider.dart';
 import '../widgets/checklist_form.dart';
@@ -30,36 +30,40 @@ class _MiJornadaScreenState extends ConsumerState<MiJornadaScreen> {
   Widget build(BuildContext context) {
     final jornada = ref.watch(miJornadaProvider);
     final body = jornada.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Text('No se pudo cargar la jornada: $e'),
-        TextButton(onPressed: _actualizar, child: const Text('Reintentar')),
-      ])),
+      loading: () => RamisLoading(),
+      error: (e, _) => RamisErrorView(
+        title: 'No se pudo cargar la jornada',
+        description: '$e',
+        onRetry: () => ref.invalidate(miJornadaProvider),
+      ),
       data: (j) => RefreshIndicator(
           onRefresh: _actualizar,
           child: j == null ? _sinJornada() : _consola(j)),
     );
     return widget.embedded
         ? body
-        : Scaffold(
-            appBar:
-                AppBar(title: const Text('Seguimiento de la Jornada Actual')),
+        : RamisScaffold(
+            maxContentWidth: 1200,
+            appBar: RamisAppBar(
+              title: 'Mi jornada',
+              automaticallyImplyLeading: true,
+            ),
             body: body);
   }
 
   Widget _sinJornada() => ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(20),
+          physics: AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.all(RamisSpacing.large),
           children: [
             if (_cerrada case final cerrada?)
-              Card(
+              RamisCard(
+                  padding: EdgeInsets.zero,
                   child: Padding(
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(RamisSpacing.medium),
                       child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Jornada finalizada',
+                            Text('Jornada finalizada',
                                 style: TextStyle(fontWeight: FontWeight.bold)),
                             Text(
                                 'Recorrido: ${((cerrada.kmFinal ?? 0) - (cerrada.kmInicial ?? 0)).toStringAsFixed(1)} km'),
@@ -68,28 +72,37 @@ class _MiJornadaScreenState extends ConsumerState<MiJornadaScreen> {
                             Text(
                                 'Rendimiento: ${cerrada.rendimientoKmGalon?.toStringAsFixed(2) ?? "Sin estimación"} km/gal'),
                           ]))),
-            const Text('No tienes una jornada activa en este momento.'),
-            const SizedBox(height: 20),
-            FilledButton.icon(
-                icon: const Icon(Icons.local_shipping),
-                label: const Text('Empezar a Conducir'),
-                onPressed: () async {
-                  await Navigator.push<void>(
-                      context,
-                      MaterialPageRoute(
-                          builder: (ctx) => Scaffold(
-                              appBar:
-                                  AppBar(title: const Text('Abrir jornada')),
-                              body: RegistroAccionForm(
-                                  soloApertura: true,
-                                  onRegistered: () => Navigator.pop(ctx)))));
-                  if (mounted) {
-                    setState(() => _cerrada = null);
-                    await _actualizar();
-                  }
-                }),
-            const SizedBox(height: 12),
-            const Text(
+            RamisEmptyState(
+              icon: Icons.local_shipping_outlined,
+              title: 'Tu próxima jornada',
+              description: 'No tienes una jornada activa en este momento.',
+            ),
+            SizedBox(height: RamisSpacing.large),
+            RamisButton(
+              label: 'Empezar a Conducir',
+              onPressed: () async {
+                await Navigator.push<void>(
+                    context,
+                    MaterialPageRoute(
+                        builder: (ctx) => RamisScaffold(
+                            maxContentWidth: 1200,
+                            appBar: RamisAppBar(
+                              title: 'Abrir jornada',
+                              automaticallyImplyLeading: true,
+                            ),
+                            body: RegistroAccionForm(
+                                soloApertura: true,
+                                onRegistered: () => Navigator.pop(ctx)))));
+                if (mounted) {
+                  setState(() => _cerrada = null);
+                  await _actualizar();
+                }
+              },
+              variant: RamisButtonVariant.primary,
+              icon: Icons.local_shipping,
+            ),
+            SizedBox(height: RamisSpacing.mediumSmall),
+            Text(
                 'Registra el vehículo, el odómetro inicial, el combustible y el checklist para empezar tu jornada.'),
           ]);
 
@@ -129,14 +142,15 @@ class _MiJornadaScreenState extends ConsumerState<MiJornadaScreen> {
     }).toList()
       ..sort((a, b) => a.fecha!.compareTo(b.fecha!));
     return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(20),
+        physics: AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.all(RamisSpacing.large),
         children: [
           if (['pendiente_de_cierre', 'cerrada_por_sistema'].contains(j.estado))
-            const Card(
-                color: Color(0xFFFFF3CD),
+            RamisCard(
+                padding: EdgeInsets.zero,
+                color: context.ramis.pendingBackground,
                 child: Padding(
-                    padding: EdgeInsets.all(16),
+                    padding: EdgeInsets.all(RamisSpacing.medium),
                     child: Text(
                         'Odómetro pendiente de cierre. Regularice esta jornada para poder tomar otro vehículo.'))),
           for (final sub in j.subAcciones)
@@ -146,11 +160,12 @@ class _MiJornadaScreenState extends ConsumerState<MiJornadaScreen> {
               j.estado == 'en_curso'
                   ? 'Mi jornada en curso'
                   : 'Jornada asignada',
-              style: AppTheme.titleLarge),
-          const SizedBox(height: 12),
-          Card(
+              style: Theme.of(context).textTheme.titleLarge!),
+          SizedBox(height: RamisSpacing.mediumSmall),
+          RamisCard(
+              padding: EdgeInsets.zero,
               child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(RamisSpacing.medium),
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -158,13 +173,14 @@ class _MiJornadaScreenState extends ConsumerState<MiJornadaScreen> {
                             v == null
                                 ? 'Vehículo #${j.vehiculoId}'
                                 : '${v['placa']} · ${v['tipo'] ?? v['modelo']}',
-                            style: AppTheme.titleMedium),
+                            style: Theme.of(context).textTheme.titleMedium!),
                         if (vehiculo.hasError)
-                          TextButton(
-                              onPressed: () => ref.invalidate(
-                                  vehiculoJornadaProvider(j.vehiculoId!)),
-                              child:
-                                  const Text('Reintentar datos del vehículo')),
+                          RamisButton(
+                            label: 'Reintentar datos del vehículo',
+                            onPressed: () => ref.invalidate(
+                                vehiculoJornadaProvider(j.vehiculoId!)),
+                            variant: RamisButtonVariant.text,
+                          ),
                         Text(conductor == null
                             ? 'Conductor #${j.conductorId}'
                             : '${conductor.nombre} ${conductor.apellidos}'),
@@ -175,7 +191,8 @@ class _MiJornadaScreenState extends ConsumerState<MiJornadaScreen> {
                             spacing: 8,
                             crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
-                              Icon(Icons.circle, color: colorSemaforo(color)),
+                              Icon(Icons.circle,
+                                  color: colorSemaforo(context, color)),
                               Text(switch (color) {
                                 'rojo' => 'Rojo · Vehículo inoperativo',
                                 'amarillo' =>
@@ -184,66 +201,79 @@ class _MiJornadaScreenState extends ConsumerState<MiJornadaScreen> {
                               })
                             ]),
                         if (color == 'rojo')
-                          const Text(
+                          Text(
                               'La unidad está inoperativa. La jornada permanece abierta para registrar novedades y efectuar el cierre.',
-                              style: TextStyle(color: Colors.red)),
+                              style: TextStyle(color: context.ramis.error)),
                         if (v?['observaciones_pendientes'] != null)
                           Text(v!['observaciones_pendientes'] as String),
                       ]))),
           if (j.estado == 'pendiente')
-            FilledButton(
-                onPressed: () => _checklist(j, 'inicial', v),
-                child: const Text('Checklist de apertura')),
+            RamisButton(
+              label: 'Checklist de apertura',
+              onPressed: () => _checklist(j, 'inicial', v),
+              variant: RamisButtonVariant.primary,
+            ),
           if (j.estado == 'en_curso') ...[
-            const SizedBox(height: 16),
-            const Text('Acciones en ruta · Sin finalizar la jornada'),
-            const SizedBox(height: 8),
-            FilledButton.icon(
-                onPressed: () => _reportar(j),
-                icon: const Icon(Icons.warning_amber),
-                label: const Text('Reportar Observación')),
-            OutlinedButton.icon(
-                onPressed: () async {
-                  await Navigator.push<void>(
-                      context,
-                      MaterialPageRoute(
-                          builder: (ctx) => Scaffold(
-                              appBar: AppBar(
-                                  title: const Text('Sub-acción en ruta')),
-                              body: RegistroAccionForm(
-                                  jornada: j,
-                                  onRegistered: () => Navigator.pop(ctx)))));
-                  if (mounted) await _actualizar();
-                },
-                icon: const Icon(Icons.add),
-                label: const Text('Registrar Sub-Acción en Ruta')),
+            SizedBox(height: RamisSpacing.medium),
+            Text('Acciones en ruta · Sin finalizar la jornada'),
+            SizedBox(height: RamisSpacing.small),
+            RamisButton(
+              label: 'Reportar Observación',
+              onPressed: () => _reportar(j),
+              variant: RamisButtonVariant.primary,
+              icon: Icons.warning_amber,
+            ),
+            SizedBox(height: RamisSpacing.small),
+            RamisButton(
+              label: 'Registrar Sub-Acción en Ruta',
+              onPressed: () async {
+                await Navigator.push<void>(
+                    context,
+                    MaterialPageRoute(
+                        builder: (ctx) => RamisScaffold(
+                            maxContentWidth: 1200,
+                            appBar: RamisAppBar(
+                              title: 'Sub-acción en ruta',
+                              automaticallyImplyLeading: true,
+                            ),
+                            body: RegistroAccionForm(
+                                jornada: j,
+                                onRegistered: () => Navigator.pop(ctx)))));
+                if (mounted) await _actualizar();
+              },
+              variant: RamisButtonVariant.outlined,
+              icon: Icons.add,
+            ),
           ],
-          const SizedBox(height: 20),
-          Text('Línea de tiempo de hoy', style: AppTheme.titleMedium),
-          if (eventos.isEmpty)
-            const Text('Aún no hay actividades registradas hoy.'),
+          SizedBox(height: RamisSpacing.large),
+          Text('Línea de tiempo de hoy',
+              style: Theme.of(context).textTheme.titleMedium!),
+          if (eventos.isEmpty) Text('Aún no hay actividades registradas hoy.'),
           for (final e in eventos)
-            Card(
+            RamisCard(
+                padding: EdgeInsets.zero,
                 child: ExpansionTile(
-              leading:
-                  Icon(Icons.circle, size: 14, color: colorSemaforo(e.color)),
-              title: Text(e.titulo),
-              subtitle: Text(_fecha(e.fecha)),
-              children: [
-                Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Text(e.descripcion)),
-                if (e.foto != null) FotoObservacion(url: e.foto!)
-              ],
-            )),
+                  leading: Icon(Icons.circle,
+                      size: 14, color: colorSemaforo(context, e.color)),
+                  title: Text(e.titulo),
+                  subtitle: Text(_fecha(e.fecha)),
+                  children: [
+                    Padding(
+                        padding: EdgeInsets.all(RamisSpacing.mediumSmall),
+                        child: Text(e.descripcion)),
+                    if (e.foto != null) FotoObservacion(url: e.foto!)
+                  ],
+                )),
           if (['en_curso', 'pendiente_de_cierre', 'cerrada_por_sistema']
               .contains(j.estado))
             Padding(
-                padding: const EdgeInsets.only(top: 20),
-                child: FilledButton.icon(
-                    onPressed: () => _checklist(j, 'final', v),
-                    icon: const Icon(Icons.stop_circle_outlined),
-                    label: const Text('Finalizar Jornada'))),
+                padding: EdgeInsets.only(top: RamisSpacing.large),
+                child: RamisButton(
+                  label: 'Finalizar Jornada',
+                  onPressed: () => _checklist(j, 'final', v),
+                  variant: RamisButtonVariant.primary,
+                  icon: Icons.stop_circle_outlined,
+                )),
         ]);
   }
 
@@ -310,7 +340,7 @@ class _MiJornadaScreenState extends ConsumerState<MiJornadaScreen> {
         builder: (ctx) => StatefulBuilder(
             builder: (ctx, update) => AlertDialog(
                   scrollable: true,
-                  title: const Text('Reportar Observación en Ruta'),
+                  title: Text('Reportar Observación en Ruta'),
                   content: Form(
                       key: form,
                       child: ObservacionFields(
@@ -322,54 +352,57 @@ class _MiJornadaScreenState extends ConsumerState<MiJornadaScreen> {
                             foto = url;
                           })),
                   actions: [
-                    TextButton(
-                        onPressed: enviando ? null : () => Navigator.pop(ctx),
-                        child: const Text('Cancelar')),
-                    FilledButton(
-                        onPressed: enviando
-                            ? null
-                            : () async {
-                                if (!form.currentState!.validate()) return;
-                                if (!activa) {
+                    RamisButton(
+                      label: 'Cancelar',
+                      onPressed: enviando ? null : () => Navigator.pop(ctx),
+                      variant: RamisButtonVariant.text,
+                    ),
+                    RamisButton(
+                      label: enviando
+                          ? 'Guardando...'
+                          : 'Guardar Observación (continuar jornada)',
+                      onPressed: enviando
+                          ? null
+                          : () async {
+                              if (!form.currentState!.validate()) return;
+                              if (!activa) {
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                    content: Text(
+                                        'Active las observaciones para registrar una novedad.')));
+                                return;
+                              }
+                              update(() => enviando = true);
+                              try {
+                                await ref
+                                    .read(transporteRepositoryProvider)
+                                    .registrarIncidencia(
+                                        j.id,
+                                        IncidenciaRutaRequest(
+                                            tipo: 'falla',
+                                            severidad: severidad,
+                                            fotoIncidencia: foto,
+                                            fotos: fotos,
+                                            descripcion: descripcion.trim()));
+                                if (!mounted) return;
+                                if (ctx.mounted) Navigator.pop(ctx);
+                                ref.invalidate(
+                                    vehiculoJornadaProvider(j.vehiculoId!));
+                                await _actualizar();
+                              } on TransportQueued catch (e) {
+                                if (ctx.mounted) Navigator.pop(ctx);
+                                if (mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                          content: Text(
-                                              'Active las observaciones para registrar una novedad.')));
-                                  return;
+                                      SnackBar(content: Text(e.toString())));
                                 }
-                                update(() => enviando = true);
-                                try {
-                                  await ref
-                                      .read(transporteRepositoryProvider)
-                                      .registrarIncidencia(
-                                          j.id,
-                                          IncidenciaRutaRequest(
-                                              tipo: 'falla',
-                                              severidad: severidad,
-                                              fotoIncidencia: foto,
-                                              fotos: fotos,
-                                              descripcion: descripcion.trim()));
-                                  if (!mounted) return;
-                                  if (ctx.mounted) Navigator.pop(ctx);
-                                  ref.invalidate(
-                                      vehiculoJornadaProvider(j.vehiculoId!));
-                                  await _actualizar();
-                                } on TransportQueued catch (e) {
-                                  if (ctx.mounted) Navigator.pop(ctx);
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text(e.toString())));
-                                  }
-                                } catch (e) {
-                                  if (ctx.mounted) {
-                                    update(() => enviando = false);
-                                  }
-                                  if (mounted) _error(e);
+                              } catch (e) {
+                                if (ctx.mounted) {
+                                  update(() => enviando = false);
                                 }
-                              },
-                        child: Text(enviando
-                            ? 'Guardando...'
-                            : 'Guardar Observación (continuar jornada)'))
+                                if (mounted) _error(e);
+                              }
+                            },
+                      variant: RamisButtonVariant.primary,
+                    )
                   ],
                 )));
   }

@@ -1,5 +1,5 @@
+import 'package:sistema_ocs/core/design_system/ramis_design_system.dart';
 import 'package:flutter/material.dart';
-import 'package:sistema_ocs/core/theme/app_theme.dart';
 import 'package:sistema_ocs/features/transportes/domain/entities/jornada_transporte.dart';
 
 class GruaFormWidget extends StatefulWidget {
@@ -39,9 +39,9 @@ class _GruaFormWidgetState extends State<GruaFormWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TextFormField(
+        RamisTextField(
           controller: _actividadController,
-          decoration: AppTheme.inputDecoration.copyWith(
+          decoration: InputDecoration(
             labelText: 'ACTIVIDAD A REALIZAR',
             helperText: 'Describir la actividad que se realiza con la grúa',
             helperMaxLines: 2,
@@ -53,13 +53,13 @@ class _GruaFormWidgetState extends State<GruaFormWidget> {
               : null,
           onChanged: (_) => _emit(),
         ),
-        const SizedBox(height: AppTheme.spacingL),
-        TextFormField(
+        SizedBox(height: RamisSpacing.medium),
+        RamisTextField(
           controller: _horometroInicialController,
-          decoration: AppTheme.inputDecoration.copyWith(
+          decoration: InputDecoration(
             labelText: 'HORÓMETRO INICIAL',
           ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          keyboardType: TextInputType.numberWithOptions(decimal: true),
           validator: (value) {
             final numero = _numero(value ?? '');
             return numero == null || numero <= 0
@@ -68,13 +68,13 @@ class _GruaFormWidgetState extends State<GruaFormWidget> {
           },
           onChanged: (_) => _emit(),
         ),
-        const SizedBox(height: AppTheme.spacingL),
-        TextFormField(
+        SizedBox(height: RamisSpacing.medium),
+        RamisTextField(
           controller: _horometroFinalController,
-          decoration: AppTheme.inputDecoration.copyWith(
+          decoration: InputDecoration(
             labelText: 'HORÓMETRO FINAL',
           ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          keyboardType: TextInputType.numberWithOptions(decimal: true),
           validator: (value) {
             if (value == null || value.trim().isEmpty) return null;
             final numero = _numero(value);

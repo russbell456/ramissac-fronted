@@ -1,3 +1,4 @@
+import 'package:sistema_ocs/core/design_system/ramis_design_system.dart';
 import '../../providers/jornadas_provider.dart';
 import '../widgets/observacion_fields.dart';
 import '../widgets/transport_notification_bell.dart';
@@ -6,7 +7,6 @@ import 'vehiculo_detalle_screen.dart';
 import '../../../dashboard/custom_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sistema_ocs/core/theme/app_theme.dart';
 import 'package:sistema_ocs/features/transportes/providers/admin_transportes_provider.dart';
 
 class AdminTransportesScreen extends ConsumerWidget {
@@ -19,29 +19,28 @@ class AdminTransportesScreen extends ConsumerWidget {
     return DefaultTabController(
       length: 6,
       initialIndex: initialIndex,
-      child: Scaffold(
+      child: RamisScaffold(
+        maxContentWidth: 1200,
         drawer: CustomDrawer(
             onMenuItemTap: (_) =>
                 Navigator.of(context).popUntil((route) => route.isFirst)),
-        appBar: AppBar(
-          title: const Text('Gestión de Flota'),
-          actions: const [TransportNotificationBell()],
-          bottom: const TabBar(
-            isScrollable: true,
-            tabs: [
-              Tab(icon: Icon(Icons.assignment), text: 'Jornadas'),
-              Tab(icon: Icon(Icons.local_shipping), text: 'Flota'),
-              Tab(icon: Icon(Icons.visibility), text: 'Observaciones'),
-              Tab(icon: Icon(Icons.build), text: 'Mantenimientos'),
-              Tab(icon: Icon(Icons.gps_fixed), text: 'GPS'),
-              Tab(icon: Icon(Icons.people_alt), text: 'Conductores'),
-            ],
-          ),
+        appBar: RamisAppBar(
+          title: 'Gestión de Flota',
+          automaticallyImplyLeading: true,
+          actions: [TransportNotificationBell()],
+          bottom: TabBar(isScrollable: true, tabs: [
+            Tab(icon: Icon(Icons.assignment), text: 'Jornadas'),
+            Tab(icon: Icon(Icons.local_shipping), text: 'Flota'),
+            Tab(icon: Icon(Icons.visibility), text: 'Observaciones'),
+            Tab(icon: Icon(Icons.build), text: 'Mantenimientos'),
+            Tab(icon: Icon(Icons.gps_fixed), text: 'GPS'),
+            Tab(icon: Icon(Icons.people_alt), text: 'Conductores')
+          ]),
         ),
-        body: const TabBarView(
+        body: TabBarView(
           children: [
             _JornadasTab(),
-            _FotaTab(),
+            _FlotaTab(),
             _ObservacionesTab(),
             _MantenimientosTab(),
             _GpsTab(),
@@ -64,10 +63,13 @@ class _JornadasTab extends ConsumerWidget {
       child: jornadasAsync.when(
         data: (jornadas) {
           if (jornadas.isEmpty) {
-            return const Center(child: Text('No hay jornadas registradas.'));
+            return RamisEmptyState(
+                icon: Icons.inbox_outlined,
+                title: 'Sin registros',
+                description: 'No hay jornadas registradas.');
           }
           return ListView.builder(
-            padding: const EdgeInsets.all(AppTheme.spacingM),
+            padding: EdgeInsets.all(RamisSpacing.mediumSmall),
             itemCount: jornadas.length + 1,
             itemBuilder: (_, i) {
               if (i == 0) {
@@ -84,24 +86,26 @@ class _JornadasTab extends ConsumerWidget {
                         total +
                         ((j['km_final'] as num?)?.toDouble() ?? 0) -
                         ((j['km_inicial'] as num?)?.toDouble() ?? 0));
-                return Card(
+                return RamisCard(
+                    padding: EdgeInsets.zero,
                     child: Padding(
-                        padding: const EdgeInsets.all(16),
+                        padding: EdgeInsets.all(RamisSpacing.medium),
                         child: Text(
                             'Consumo consolidado: ${galones.toStringAsFixed(2)} gal · ${km.toStringAsFixed(1)} km · ${galones > 0 ? (km / galones).toStringAsFixed(2) : "Sin datos"} km/gal')));
               }
               final j = jornadas[i - 1];
               final tieneAlerta = (j['alerta_horas'] as bool? ?? false) ||
                   (j['alerta_km'] as bool? ?? false);
-              return Card(
-                margin: const EdgeInsets.only(bottom: AppTheme.spacingM),
+              return RamisCard(
+                padding: EdgeInsets.zero,
+                margin: EdgeInsets.only(bottom: RamisSpacing.mediumSmall),
                 child: ExpansionTile(
                   leading: Icon(
                     tieneAlerta
                         ? Icons.warning_amber
                         : Icons.check_circle_outline,
                     color: colorSemaforo(
-                        j['estado_semaforo'] as String? ?? 'verde'),
+                        context, j['estado_semaforo'] as String? ?? 'verde'),
                   ),
                   title: Text(
                       'Jornada #${j['id']} - Conductor ID: ${j['conductor_id']}'),
@@ -113,14 +117,16 @@ class _JornadasTab extends ConsumerWidget {
                       if (tieneAlerta)
                         Text(
                           '⚠ Tiene alertas de horas/km',
-                          style: AppTheme.bodySmall
-                              .copyWith(color: AppTheme.error),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall!
+                              .copyWith(color: context.ramis.error),
                         ),
                     ],
                   ),
                   children: [
                     Padding(
-                        padding: const EdgeInsets.all(16),
+                        padding: EdgeInsets.all(RamisSpacing.medium),
                         child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -142,16 +148,18 @@ class _JornadasTab extends ConsumerWidget {
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        loading: () => RamisLoading(),
+        error: (e, _) => RamisErrorView(
+            description: 'No se pudo cargar la información: $e',
+            onRetry: () => ref.invalidate(jornadasListProvider)),
       ),
     );
   }
 }
 
 // ── Pestaña 2: Flota ─────────────────────────────────────────────────────────
-class _FotaTab extends ConsumerWidget {
-  const _FotaTab();
+class _FlotaTab extends ConsumerWidget {
+  const _FlotaTab();
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final vehiculosAsync = ref.watch(vehiculosListProvider);
@@ -160,43 +168,47 @@ class _FotaTab extends ConsumerWidget {
       child: vehiculosAsync.when(
         data: (vehiculos) {
           return ListView.builder(
-            padding: const EdgeInsets.all(AppTheme.spacingM),
+            padding: EdgeInsets.all(RamisSpacing.mediumSmall),
             itemCount: vehiculos.length + 1,
             itemBuilder: (_, i) {
               if (i == 0) {
-                return Card(
+                return RamisCard(
+                    padding: EdgeInsets.zero,
                     child: Padding(
-                        padding: const EdgeInsets.all(16),
+                        padding: EdgeInsets.all(RamisSpacing.medium),
                         child: Wrap(spacing: 16, children: [
-                          FilledButton.icon(
-                              onPressed: () => mostrarAltaVehiculo(context),
-                              icon: const Icon(Icons.add),
-                              label: const Text('Alta Rápida de Vehículo')),
+                          RamisButton(
+                            label: 'Alta Rápida de Vehículo',
+                            onPressed: () => mostrarAltaVehiculo(context),
+                            variant: RamisButtonVariant.primary,
+                            icon: Icons.add,
+                          ),
                           if (vehiculos.isEmpty)
-                            const Text('No hay vehículos registrados.'),
+                            Text('No hay vehículos registrados.'),
                           for (final estado in ['verde', 'amarillo', 'rojo'])
-                            Chip(
-                                avatar: Icon(Icons.circle,
-                                    color: colorSemaforo(estado), size: 16),
-                                label: Text(
-                                    '$estado: ${vehiculos.where((v) => (v['estado_semaforo'] ?? 'verde') == estado).length}')),
+                            RamisStatusChip(
+                              label:
+                                  '$estado: ${vehiculos.where((v) => (v['estado_semaforo'] ?? 'verde') == estado).length}',
+                              foregroundColor: colorSemaforo(context, estado),
+                            ),
                         ])));
               }
               final v = vehiculos[i - 1];
               final estado = v['estado'] as String? ?? 'desconocido';
               final color = switch (estado) {
-                'disponible' => AppTheme.secondary,
-                'en_ruta' => AppTheme.primary,
-                'en_mantenimiento' => AppTheme.warning,
-                _ => AppTheme.textDisabled,
+                'disponible' => Theme.of(context).colorScheme.primary,
+                'en_ruta' => Theme.of(context).colorScheme.primary,
+                'en_mantenimiento' => context.ramis.warning,
+                _ => Theme.of(context).colorScheme.onSurfaceVariant,
               };
-              return Card(
-                margin: const EdgeInsets.only(bottom: AppTheme.spacingM),
+              return RamisCard(
+                padding: EdgeInsets.zero,
+                margin: EdgeInsets.only(bottom: RamisSpacing.mediumSmall),
                 child: ListTile(
                   leading: CircleAvatar(
                     backgroundColor: color.withAlpha(30),
                     child: Icon(Icons.directions_car,
-                        color: colorSemaforo(
+                        color: colorSemaforo(context,
                             v['estado_semaforo'] as String? ?? 'verde')),
                   ),
                   onTap: () => Navigator.push<void>(
@@ -209,7 +221,7 @@ class _FotaTab extends ConsumerWidget {
                   trailing: PopupMenuButton<String>(
                       tooltip: 'Opciones del vehículo',
                       onSelected: (_) => _editarVehiculo(context, ref, v),
-                      itemBuilder: (_) => const [
+                      itemBuilder: (_) => [
                             PopupMenuItem(
                                 value: 'tanque',
                                 child: Text('Configurar tipo y tanque'))
@@ -219,8 +231,10 @@ class _FotaTab extends ConsumerWidget {
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        loading: () => RamisLoading(),
+        error: (e, _) => RamisErrorView(
+            description: 'No se pudo cargar la información: $e',
+            onRetry: () => ref.invalidate(vehiculosListProvider)),
       ),
     );
   }
@@ -243,46 +257,44 @@ class _ObservacionesTab extends ConsumerWidget {
                   j['observaciones'] != 'Sin novedades')
               .toList();
           if (conObs.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.visibility_off_outlined,
-                      size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text('No hay observaciones registradas.'),
-                ],
-              ),
+            return RamisEmptyState(
+              icon: Icons.visibility_off_outlined,
+              title: 'Sin observaciones',
+              description: 'No hay observaciones registradas.',
             );
           }
           return ListView.builder(
-            padding: const EdgeInsets.all(AppTheme.spacingM),
+            padding: EdgeInsets.all(RamisSpacing.mediumSmall),
             itemCount: conObs.length,
             itemBuilder: (_, i) {
               final j = conObs[i];
-              return Card(
+              return RamisCard(
+                  padding: EdgeInsets.zero,
                   child: ExpansionTile(
-                leading: Icon(Icons.circle,
-                    color: colorSemaforo(
-                        j['estado_semaforo'] as String? ?? 'verde')),
-                title:
-                    Text('Jornada #${j['id']} · Vehículo #${j['vehiculo_id']}'),
-                subtitle: Text(j['accion_tipo'] as String? ?? 'Jornada'),
-                children: [
-                  Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(children: [
-                        Text(j['observaciones'] as String),
-                        if (j['foto_observacion'] != null)
-                          FotoObservacion(url: j['foto_observacion'] as String),
-                      ]))
-                ],
-              ));
+                    leading: Icon(Icons.circle,
+                        color: colorSemaforo(context,
+                            j['estado_semaforo'] as String? ?? 'verde')),
+                    title: Text(
+                        'Jornada #${j['id']} · Vehículo #${j['vehiculo_id']}'),
+                    subtitle: Text(j['accion_tipo'] as String? ?? 'Jornada'),
+                    children: [
+                      Padding(
+                          padding: EdgeInsets.all(RamisSpacing.medium),
+                          child: Column(children: [
+                            Text(j['observaciones'] as String),
+                            if (j['foto_observacion'] != null)
+                              FotoObservacion(
+                                  url: j['foto_observacion'] as String),
+                          ]))
+                    ],
+                  ));
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        loading: () => RamisLoading(),
+        error: (e, _) => RamisErrorView(
+            description: 'No se pudo cargar la información: $e',
+            onRetry: () => ref.invalidate(jornadasListProvider)),
       ),
     );
   }
@@ -299,44 +311,57 @@ class _MantenimientosTab extends ConsumerWidget {
       child: mantenimientosAsync.when(
         data: (items) {
           if (items.isEmpty) {
-            return const Center(
-                child: Text('No hay mantenimientos registrados.'));
+            return RamisEmptyState(
+                icon: Icons.inbox_outlined,
+                title: 'Sin registros',
+                description: 'No hay mantenimientos registrados.');
           }
           return ListView.builder(
-            padding: const EdgeInsets.all(AppTheme.spacingM),
+            padding: EdgeInsets.all(RamisSpacing.mediumSmall),
             itemCount: items.length,
             itemBuilder: (_, i) {
               final m = items[i];
               final estado = m['estado'] as String? ?? 'pendiente';
               final colorEstado = switch (estado.toLowerCase()) {
-                'finalizado' || 'completado' => AppTheme.secondary,
-                'en_proceso' || 'en proceso' => AppTheme.primary,
-                _ => AppTheme.warning,
+                'finalizado' ||
+                'completado' =>
+                  Theme.of(context).colorScheme.primary,
+                'en_proceso' ||
+                'en proceso' =>
+                  Theme.of(context).colorScheme.primary,
+                _ => context.ramis.warning,
               };
-              return Card(
-                margin: const EdgeInsets.only(bottom: AppTheme.spacingM),
+              return RamisCard(
+                padding: EdgeInsets.zero,
+                margin: EdgeInsets.only(bottom: RamisSpacing.mediumSmall),
                 child: ListTile(
-                  leading: const CircleAvatar(child: Icon(Icons.build_circle)),
+                  leading: CircleAvatar(child: Icon(Icons.build_circle)),
                   title: Text(m['descripcion'] as String? ?? 'Mantenimiento'),
                   subtitle: Text(
                       'Vehículo ID: ${m['vehiculo_id']} | Tipo: ${m['tipo'] ?? 'N/A'}'),
                   trailing: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: EdgeInsets.symmetric(
+                        horizontal: RamisSpacing.small,
+                        vertical: RamisSpacing.xSmall),
                     decoration: BoxDecoration(
                       color: colorEstado.withAlpha(30),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: RamisRadius.medium,
                     ),
                     child: Text(estado,
-                        style: AppTheme.bodySmall.copyWith(color: colorEstado)),
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall!
+                            .copyWith(color: colorEstado)),
                   ),
                 ),
               );
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        loading: () => RamisLoading(),
+        error: (e, _) => RamisErrorView(
+            description: 'No se pudo cargar la información: $e',
+            onRetry: () => ref.invalidate(mantenimientosListProvider)),
       ),
     );
   }
@@ -347,55 +372,18 @@ class _GpsTab extends StatelessWidget {
   const _GpsTab();
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.gps_fixed, size: 80, color: AppTheme.textDisabled),
-          const SizedBox(height: 16),
-          Text('Integración futura de GPS',
-              style:
-                  AppTheme.titleMedium.copyWith(color: AppTheme.textSecondary)),
-          const SizedBox(height: 8),
-          Text(
-            'Este módulo permitirá el rastreo en tiempo real\nde los vehículos de la flota.',
-            style: AppTheme.bodySmall.copyWith(color: AppTheme.textDisabled),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
+    return RamisEmptyState(
+      icon: Icons.gps_fixed,
+      title: 'Integración futura de GPS',
+      description:
+          'Este módulo permitirá el rastreo en tiempo real de los vehículos de la flota.',
     );
   }
 }
 
-// ── Helper widget compartido ──────────────────────────────────────────────────
-// ignore: unused_element
-Widget _buildList(
-  AsyncValue<List<Map<String, dynamic>>> asyncData,
-  Widget Function(Map<String, dynamic> item) builder, {
-  Future<void> Function()? onRefresh,
-}) {
-  return asyncData.when(
-    data: (items) {
-      if (items.isEmpty) {
-        return const Center(child: Text('Sin datos disponibles.'));
-      }
-      return RefreshIndicator(
-        onRefresh: onRefresh ?? () async {},
-        child: ListView.builder(
-          itemCount: items.length,
-          itemBuilder: (_, i) => builder(items[i]),
-        ),
-      );
-    },
-    loading: () => const Center(child: CircularProgressIndicator()),
-    error: (e, _) => Center(child: Text('Error: $e')),
-  );
-}
-
 Future<void> _editarVehiculo(
     BuildContext context, WidgetRef ref, Map<String, dynamic> vehiculo) async {
-  const tipos = ['Camión Grúa', 'Camión de Carga', 'Camioneta', 'Coaster'];
+  final tipos = ['Camión Grúa', 'Camión de Carga', 'Camioneta', 'Coaster'];
   String tipo = tipos.contains(vehiculo['tipo'])
       ? vehiculo['tipo'] as String
       : 'Camión de Carga';
@@ -415,22 +403,22 @@ Future<void> _editarVehiculo(
                       DropdownButtonFormField<String>(
                           initialValue: tipo,
                           isExpanded: true,
-                          decoration: const InputDecoration(
-                              labelText: 'Tipo de vehículo'),
+                          decoration:
+                              InputDecoration(labelText: 'Tipo de vehículo'),
                           items: tipos
                               .map((t) =>
                                   DropdownMenuItem(value: t, child: Text(t)))
                               .toList(),
                           onChanged: (v) => tipo = v!),
-                      TextFormField(
+                      RamisTextField(
                           controller: capacidad,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                               labelText: 'Capacidad del tanque (galones)',
                               helperText:
                                   'Necesaria para estimar el consumo por jornada',
                               helperMaxLines: 2),
-                          keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
+                          keyboardType:
+                              TextInputType.numberWithOptions(decimal: true),
                           validator: (v) => (v ?? '').isNotEmpty &&
                                   (double.tryParse(v!.replaceAll(',', '.')) ==
                                           null ||
@@ -439,37 +427,39 @@ Future<void> _editarVehiculo(
                               : null),
                     ])),
                 actions: [
-                  TextButton(
-                      onPressed: guardando ? null : () => Navigator.pop(ctx),
-                      child: const Text('Cancelar')),
-                  FilledButton(
-                      onPressed: guardando
-                          ? null
-                          : () async {
-                              if (!form.currentState!.validate()) return;
-                              update(() => guardando = true);
-                              try {
-                                await ref
-                                    .read(transporteRepositoryProvider)
-                                    .actualizarDatosVehiculo(
-                                        vehiculo['id'] as int,
-                                        tipo,
-                                        double.tryParse(capacidad.text
-                                            .replaceAll(',', '.')));
-                                ref.invalidate(vehiculosListProvider);
-                                ref.invalidate(vehiculosDisponiblesProvider);
-                                if (ctx.mounted) Navigator.pop(ctx);
-                              } catch (e) {
-                                if (ctx.mounted) {
-                                  update(() => guardando = false);
-                                  ScaffoldMessenger.of(ctx).showSnackBar(
-                                      SnackBar(
-                                          content:
-                                              Text('No se pudo guardar: $e')));
-                                }
+                  RamisButton(
+                    label: 'Cancelar',
+                    onPressed: guardando ? null : () => Navigator.pop(ctx),
+                    variant: RamisButtonVariant.text,
+                  ),
+                  RamisButton(
+                    label: guardando ? 'Guardando...' : 'Guardar',
+                    onPressed: guardando
+                        ? null
+                        : () async {
+                            if (!form.currentState!.validate()) return;
+                            update(() => guardando = true);
+                            try {
+                              await ref
+                                  .read(transporteRepositoryProvider)
+                                  .actualizarDatosVehiculo(
+                                      vehiculo['id'] as int,
+                                      tipo,
+                                      double.tryParse(
+                                          capacidad.text.replaceAll(',', '.')));
+                              ref.invalidate(vehiculosListProvider);
+                              ref.invalidate(vehiculosDisponiblesProvider);
+                              if (ctx.mounted) Navigator.pop(ctx);
+                            } catch (e) {
+                              if (ctx.mounted) {
+                                update(() => guardando = false);
+                                ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+                                    content: Text('No se pudo guardar: $e')));
                               }
-                            },
-                      child: Text(guardando ? 'Guardando...' : 'Guardar'))
+                            }
+                          },
+                    variant: RamisButtonVariant.primary,
+                  )
                 ],
               )));
   capacidad.dispose();

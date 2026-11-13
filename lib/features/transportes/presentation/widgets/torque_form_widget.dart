@@ -1,5 +1,5 @@
+import 'package:sistema_ocs/core/design_system/ramis_design_system.dart';
 import 'package:flutter/material.dart';
-import 'package:sistema_ocs/core/theme/app_theme.dart';
 import 'package:sistema_ocs/features/transportes/domain/entities/jornada_transporte.dart';
 
 class TorqueFormWidget extends StatefulWidget {
@@ -23,10 +23,10 @@ class _TorqueFormWidgetState extends State<TorqueFormWidget> {
   double? _numero(String value) => double.tryParse(value.replaceAll(',', '.'));
 
   @override
-  Widget build(BuildContext context) => TextFormField(
+  Widget build(BuildContext context) => RamisTextField(
         controller: _controller,
-        decoration: AppTheme.inputDecoration.copyWith(labelText: 'TORQUE'),
-        keyboardType: const TextInputType.numberWithOptions(
+        decoration: InputDecoration(labelText: 'TORQUE'),
+        keyboardType: TextInputType.numberWithOptions(
           signed: true,
           decimal: true,
         ),

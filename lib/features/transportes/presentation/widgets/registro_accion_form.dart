@@ -1,10 +1,10 @@
+import 'package:sistema_ocs/core/design_system/ramis_design_system.dart';
 import 'vehiculo_selector.dart';
 import 'observacion_fields.dart';
 import 'odometro_confirm.dart';
 import '../../data/repositories/transporte_repository_impl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sistema_ocs/core/theme/app_theme.dart';
 import 'package:sistema_ocs/features/transportes/domain/entities/jornada_transporte.dart';
 import 'package:sistema_ocs/features/transportes/domain/failures/transport_failure.dart';
 import 'package:sistema_ocs/features/transportes/presentation/widgets/fuel_gauge_selector.dart';
@@ -170,22 +170,23 @@ class _RegistroAccionFormState extends ConsumerState<RegistroAccionForm> {
           (v['tipo'] == null && ['Z7F-777', 'Z7M-813'].contains(v['placa']));
     }
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppTheme.spacingL),
-      child: AppCard(
+      padding: EdgeInsets.all(RamisSpacing.medium),
+      child: RamisCard(
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Registro de Actividad', style: AppTheme.titleLarge),
-              const SizedBox(height: AppTheme.spacingL),
+              Text('Registro de Actividad',
+                  style: Theme.of(context).textTheme.titleLarge!),
+              SizedBox(height: RamisSpacing.medium),
               _buildGlobalFields(),
-              const SizedBox(height: AppTheme.spacingL),
+              SizedBox(height: RamisSpacing.medium),
               DropdownButtonFormField<String>(
                 isExpanded: true,
-                decoration: AppTheme.inputDecoration.copyWith(
+                decoration: InputDecoration(
                   labelText: 'ACCIÓN A REALIZAR',
-                  prefixIcon: const Icon(Icons.touch_app),
+                  prefixIcon: Icon(Icons.touch_app),
                 ),
                 key: ValueKey("$_vehiculoId-$_esGrua"),
                 initialValue: _accionSeleccionada,
@@ -221,7 +222,7 @@ class _RegistroAccionFormState extends ConsumerState<RegistroAccionForm> {
                 validator: (val) =>
                     val == null ? 'Seleccione una acción' : null,
               ),
-              const SizedBox(height: AppTheme.spacingXL),
+              SizedBox(height: RamisSpacing.xLarge),
               if (_accionSeleccionada == "Empezar a Conducir") ...[
                 _buildConducirFields(),
               ] else if (_accionSeleccionada == "Operar Grúa") ...[
@@ -261,7 +262,7 @@ class _RegistroAccionFormState extends ConsumerState<RegistroAccionForm> {
                       setState(() => _detallesTrabajosExternos = value),
                 ),
               ],
-              const SizedBox(height: AppTheme.spacingL),
+              SizedBox(height: RamisSpacing.medium),
               ObservacionFields(
                 onPhotosChanged: (fotos) => _fotos = fotos,
                 obligatoria: _accionSeleccionada ==
@@ -273,23 +274,15 @@ class _RegistroAccionFormState extends ConsumerState<RegistroAccionForm> {
                   _foto = foto;
                 },
               ),
-              const SizedBox(height: AppTheme.spacingXL),
-              SizedBox(
-                height: 52,
-                child: ElevatedButton.icon(
+              SizedBox(height: RamisSpacing.xLarge),
+              ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 52),
+                child: RamisButton(
+                  isLoading: _isSubmitting,
+                  label: _isSubmitting ? 'Registrando...' : 'Registrar Acción',
                   onPressed: _isSubmitting ? null : _submit,
-                  icon: _isSubmitting
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppTheme.textOnPrimary,
-                          ),
-                        )
-                      : const Icon(Icons.send),
-                  label: Text(
-                      _isSubmitting ? 'Registrando...' : 'Registrar Acción'),
+                  variant: RamisButtonVariant.primary,
+                  icon: Icons.send,
                 ),
               ),
             ],
@@ -315,7 +308,7 @@ class _RegistroAccionFormState extends ConsumerState<RegistroAccionForm> {
               '${_fechaRegistro.hour.toString().padLeft(2, '0')}:'
               '${_fechaRegistro.minute.toString().padLeft(2, '0')}',
         ),
-        const SizedBox(height: AppTheme.spacingL),
+        SizedBox(height: RamisSpacing.medium),
         usuarioAsync.when(
           data: (usuario) => _buildReadonlyField(
             'Nombre del Registrador',
@@ -335,7 +328,7 @@ class _RegistroAccionFormState extends ConsumerState<RegistroAccionForm> {
             'Usuario no disponible',
           ),
         ),
-        const SizedBox(height: AppTheme.spacingL),
+        SizedBox(height: RamisSpacing.medium),
         // ── Vehículo ──
         vehiculosAsync.when(
           data: (vehiculos) {
@@ -362,34 +355,37 @@ class _RegistroAccionFormState extends ConsumerState<RegistroAccionForm> {
               },
             );
           },
-          loading: () => const LinearProgressIndicator(),
+          loading: () => LinearProgressIndicator(),
           error: (e, _) => Text('Error al cargar vehículos: $e',
-              style: AppTheme.bodySmall.copyWith(color: AppTheme.error)),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall!
+                  .copyWith(color: context.ramis.error)),
         ),
-        const SizedBox(height: AppTheme.spacingL),
+        SizedBox(height: RamisSpacing.medium),
 
         if (_accionSeleccionada != 'Operar Grúa') ...[
           // ── Kilometraje Inicial ──
-          TextFormField(
+          RamisTextField(
             controller: _kmController,
-            decoration: AppTheme.inputDecoration.copyWith(
+            decoration: InputDecoration(
               labelText: widget.jornada == null
                   ? 'Kilometraje Inicial'
                   : 'Odómetro al registrar la actividad',
-              prefixIcon: const Icon(Icons.speed),
+              prefixIcon: Icon(Icons.speed),
               helperText: 'Km registrado del vehículo al inicio',
               suffixIcon: _loadingKm
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 20,
                       height: 20,
                       child: Padding(
-                        padding: EdgeInsets.all(12),
+                        padding: EdgeInsets.all(RamisSpacing.mediumSmall),
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                     )
                   : null,
             ),
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: TextInputType.numberWithOptions(decimal: true),
             validator: (value) {
               final kmStr = value?.replaceAll(',', '.') ?? '';
               final km = double.tryParse(kmStr);
@@ -398,7 +394,7 @@ class _RegistroAccionFormState extends ConsumerState<RegistroAccionForm> {
                   : null;
             },
           ),
-          const SizedBox(height: AppTheme.spacingL),
+          SizedBox(height: RamisSpacing.medium),
 
           // ── Combustible Inicial ──
           FormField<int>(
@@ -418,8 +414,10 @@ class _RegistroAccionFormState extends ConsumerState<RegistroAccionForm> {
                 ),
                 if (field.hasError)
                   Text(field.errorText!,
-                      style:
-                          AppTheme.bodySmall.copyWith(color: AppTheme.error)),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall!
+                          .copyWith(color: context.ramis.error)),
               ],
             ),
           ),
@@ -430,11 +428,11 @@ class _RegistroAccionFormState extends ConsumerState<RegistroAccionForm> {
 
   Widget _buildReadonlyField(String label, IconData icon, String value) {
     return InputDecorator(
-      decoration: AppTheme.inputDecoration.copyWith(
+      decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon),
       ),
-      child: Text(value, style: AppTheme.bodyMedium),
+      child: Text(value, style: Theme.of(context).textTheme.bodyMedium!),
     );
   }
 
@@ -445,9 +443,9 @@ class _RegistroAccionFormState extends ConsumerState<RegistroAccionForm> {
         // ── Ruta ──
         DropdownButtonFormField<String>(
           isExpanded: true,
-          decoration: AppTheme.inputDecoration.copyWith(
+          decoration: InputDecoration(
             labelText: 'Ruta o Recorrido',
-            prefixIcon: const Icon(Icons.route),
+            prefixIcon: Icon(Icons.route),
           ),
           items: _rutas
               .map((r) => DropdownMenuItem(
@@ -459,19 +457,19 @@ class _RegistroAccionFormState extends ConsumerState<RegistroAccionForm> {
           validator: (val) => val == null ? 'Seleccione una ruta' : null,
         ),
         if (_rutaSeleccionada == 'Otras') ...[
-          const SizedBox(height: AppTheme.spacingM),
-          TextFormField(
+          SizedBox(height: RamisSpacing.mediumSmall),
+          RamisTextField(
             controller: _otraRutaController,
-            decoration: AppTheme.inputDecoration.copyWith(
+            decoration: InputDecoration(
               labelText: 'Especifique la ruta',
-              prefixIcon: const Icon(Icons.edit_road),
+              prefixIcon: Icon(Icons.edit_road),
             ),
             validator: (value) => value == null || value.trim().isEmpty
                 ? 'Ingrese la ruta o recorrido'
                 : null,
           ),
         ],
-        const SizedBox(height: AppTheme.spacingL),
+        SizedBox(height: RamisSpacing.medium),
         _buildChecklistFlash(),
       ],
     );
@@ -482,23 +480,27 @@ class _RegistroAccionFormState extends ConsumerState<RegistroAccionForm> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text('Check List Flash (Obligatorio)',
-            style: AppTheme.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium!
+                .copyWith(fontWeight: FontWeight.bold)),
         if (_checklistFlash.entries.any((e) =>
             !e.value &&
             RegExp('freno|direcci|Extintor|Documentos', caseSensitive: false)
                 .hasMatch(e.key)))
-          const Card(
-              color: Color(0xFFFFF3CD),
+          RamisCard(
+              padding: EdgeInsets.zero,
+              color: context.ramis.pendingBackground,
               child: Padding(
-                  padding: EdgeInsets.all(12),
+                  padding: EdgeInsets.all(RamisSpacing.mediumSmall),
                   child: Text(
                       'Advertencia de seguridad: revise frenos/dirección, extintor y documentos. Se notificará a administración; la supervisión debe evaluar la operación.'))),
-        const SizedBox(height: AppTheme.spacingS),
+        SizedBox(height: RamisSpacing.small),
         Material(
-          color: AppTheme.surface,
+          color: Theme.of(context).colorScheme.surface,
           shape: RoundedRectangleBorder(
-            side: const BorderSide(color: AppTheme.border),
-            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(color: context.ramis.border),
+            borderRadius: RamisRadius.small,
           ),
           clipBehavior: Clip.antiAlias,
           child: Column(
@@ -510,14 +512,16 @@ class _RegistroAccionFormState extends ConsumerState<RegistroAccionForm> {
                         !_categorias.values.any((items) => items.contains(k)))
                     .toList()
               }.entries) ...[
-                const Divider(),
+                Divider(),
                 Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Text(categoria.key, style: AppTheme.labelLarge)),
+                    padding: EdgeInsets.all(RamisSpacing.mediumSmall),
+                    child: Text(categoria.key,
+                        style: Theme.of(context).textTheme.labelLarge!)),
                 for (final item in categoria.value)
                   CheckboxListTile(
-                      title:
-                          Text(item, style: AppTheme.bodySmall, softWrap: true),
+                      title: Text(item,
+                          style: Theme.of(context).textTheme.bodySmall!,
+                          softWrap: true),
                       value: _checklistFlash[item],
                       onChanged: (v) =>
                           setState(() => _checklistFlash[item] = v ?? false),
@@ -535,14 +539,14 @@ class _RegistroAccionFormState extends ConsumerState<RegistroAccionForm> {
 
     if (ref.read(currentUserForTransportProvider).value == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se pudo identificar al registrador.')),
+        SnackBar(content: Text('No se pudo identificar al registrador.')),
       );
       return;
     }
 
     if (_vehiculoId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Seleccione un vehículo.')),
+        SnackBar(content: Text('Seleccione un vehículo.')),
       );
       return;
     }
@@ -596,9 +600,9 @@ class _RegistroAccionFormState extends ConsumerState<RegistroAccionForm> {
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Acción registrada exitosamente'),
-          backgroundColor: AppTheme.secondary,
+          backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
       // Trigger a refresh of the miJornadaProvider
@@ -616,7 +620,7 @@ class _RegistroAccionFormState extends ConsumerState<RegistroAccionForm> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.message),
-          backgroundColor: AppTheme.error,
+          backgroundColor: context.ramis.error,
         ),
       );
     } finally {
